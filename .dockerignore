@@ -1,0 +1,6 @@
+target/
+.github
+prisma-cli
+.dockerignore
+.env
+.gitignore

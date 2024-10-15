@@ -1,0 +1,55 @@
+name: "Build & Test"
+
+on:
+  push:
+    branches:
+      - "main"
+      - "devops"
+      - "develop" # TODO: Remove this line when devops branch is created
+jobs:
+  build_api:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+      - name: Install postgres (Linux)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libpq-dev postgresql
+          echo "host    all             all             127.0.0.1/32            md5" > sudo tee -a /etc/postgresql/10/main/pg_hba.conf
+          sudo service postgresql restart && sleep 3
+          sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'postgres';"
+          sudo service postgresql restart && sleep 3
+          echo "PG_DATABASE_URL=postgres://postgres:postgres@localhost/" >> $GITHUB_ENV
+          echo "PG_EXAMPLE_DATABASE_URL=postgres://postgres:postgres@localhost/diesel_example" >> $GITHUB_ENV
+      - name: Set up Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+      - name: Rust version check
+        shell: bash
+        run: |
+          cargo +stable --version
+          rustc +stable --version
+      - name: Set up cargo cache
+        uses: actions/cache@v4
+        continue-on-error: false
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
+      - name: Cargo test api
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --manifest-path api/Cargo.toml
+      - name: Cargo build api
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --release --all-features --manifest-path api/Cargo.toml

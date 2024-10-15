@@ -1,0 +1,7 @@
+/target
+**/*.env
+log/
+
+.idea
+*.keep
+prisma-cli/
