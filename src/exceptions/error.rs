@@ -1,12 +1,12 @@
 use actix_web::{HttpResponse, Responder, ResponseError};
 use actix_web::body::BoxBody;
 use actix_web::http::StatusCode;
-use r2d2_redis::redis::RedisError;
 use serde::Serialize;
 use serde_json::json;
-use crate::exceptions::auth::AuthenticateError;
-use crate::exceptions::cache::CacheError;
-use crate::exceptions::db::DatabaseError;
+use super::auth::AuthenticateError;
+use super::cache::CacheError;
+use super::db::DatabaseError;
+use super::settings::SettingsError;
 
 #[derive(Debug, thiserror::Error, Serialize)]
 #[error("...")]
@@ -25,6 +25,9 @@ pub enum Error {
 
     #[error("{0}")]
     Cache(#[from] CacheError),
+
+    #[error("{0}")]
+    Settings(#[from] SettingsError)
 }
 
 impl ResponseError for Error {

@@ -1,4 +1,3 @@
-use diesel::result::Error;
 use serde::Serialize;
 
 #[derive(Debug, thiserror::Error, Serialize)]
@@ -15,20 +14,15 @@ pub enum DatabaseError {
 
     #[error("Error deleting from the database")]
     DeleteError,
+
+    #[error("Connection error: {0}")]
+    ConnectionError(String)
 }
 
-impl From<Error> for DatabaseError {
-    fn from(e: Error) -> Self {
-        match e {
-            Error::NotFound => DatabaseError::QueryError,
-            Error::DatabaseError(_, _) => DatabaseError::QueryError,
-            _ => DatabaseError::QueryError,
+impl From<sea_orm::error::DbErr> for DatabaseError {
+    fn from(value: sea_orm::error::DbErr) -> Self {
+        match value {
+            _ => Self::ConnectionError(String::from("TODO"))
         }
-    }
-}
-
-impl From<r2d2::Error> for DatabaseError {
-    fn from(value: r2d2::Error) -> Self {
-        todo!()
     }
 }

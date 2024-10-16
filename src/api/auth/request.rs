@@ -1,4 +1,4 @@
-use serde::{Deserialize};
+use serde::Deserialize;
 use validator::Validate;
 
 #[derive(Deserialize, Debug, Clone, Validate)]
@@ -13,8 +13,11 @@ pub struct AuthLoginRequest {
 pub struct AuthRegisterRequest {
     #[validate(email)]
     pub email: String,
+    #[validate(length(min = 5, max = 128))]
     pub password: String,
+    #[validate(length(min = 2, max = 64))]
     pub firstname: String,
+    #[validate(length(min = 2, max = 64))]
     pub lastname: String,
 }
 

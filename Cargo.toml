@@ -3,24 +3,17 @@ name = "api"
 version = "0.1.0"
 edition = "2021"
 
-[workspace]
-members = ["prisma-cli"]
-resolver = "2"
-
 [dependencies]
 actix = {version = "0.13.5"}
 actix-web = {version = "4.9.0", features = []}
-actix-session = {version = "0.10.1", features = ["redis-session", "redis-pool"]}
 serde_json = {version = "1.0.128", features = []}
 serde = {version = "1.0.210", features = ["derive"]}
 uuid = { version = "1.10.0", features = ["v4", "serde", "v7"]}
-diesel = {version = "2.2.4", features = ["postgres", "r2d2", "chrono", "uuid", "serde_json"]}
-diesel-ulid = "0.3.2"
 dotenv = {version = "0.15.0", features = []}
-r2d2 = {version = "0.8.10"}
-r2d2_redis = {version = "0.14.0"}
+bb8 = "0.8.5"
+bb8-redis = "0.17.0"
 chrono = {version = "0.4.38", features = ["serde"]}
-redis = {version = "0.27.3", features = ["serde", "uuid", "serde_json", "tokio-comp"]}
+redis = {version = "0.27.4", features = ["serde", "uuid", "serde_json", "tokio-comp"]}
 validator = {version = "0.18.1", features = ["derive"]}
 thiserror = {version = "1.0.64"}
 bcrypt = {version = "0.15.1"}
@@ -28,9 +21,12 @@ actix-cors = {version = "0.7.0"}
 tracing = {version = "0.1.40", features = []}
 tracing-appender = {version = "0.2.3"}
 tracing-subscriber = {version = "0.3.18", features = ["std", "serde_json", "serde", "local-time", "chrono", "fmt", "env-filter"]}
-tracing-opentelemetry = {version = "0.26.0", features = ["thiserror"]}
-opentelemetry_sdk = { version = "0.26.0", features = ["serde_json", "serde"] }
-opentelemetry-stdout = "0.26.0"
+tracing-opentelemetry = {version = "0.27.0", features = ["thiserror"]}
 opentelemetry = { version = "0.26.0", features = ["trace"] }
-deadpool-redis = {version = "0.18.0", features = ["serde", "rt_tokio_1"]}
-prisma-client-rust = { git = "https://github.com/Brendonovich/prisma-client-rust", tag = "0.6.11" }
+
+entity = { path = "entity" }
+migration = { path = "migration" }
+
+sea-orm = { version = "1.1.0", features = ["sqlx-postgres", "runtime-tokio-rustls", "macros", "with-chrono"] }
+
+config = { version = "0.14.0" }

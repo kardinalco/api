@@ -4,4 +4,6 @@ log/
 
 .idea
 *.keep
-prisma-cli/
+
+migration/target
+entity/target
