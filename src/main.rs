@@ -9,14 +9,24 @@ use crate::api::user::handler::UserRoute;
 
 use sea_orm::{sqlx::{pool::PoolConnection, Postgres}, Database, DatabaseConnection, EntityTrait};
 
+use actix_session::storage::RedisSessionStore;
+use deadpool_redis::{Config, Runtime};
+
 mod test_helpers;
 mod utils;
 mod api;
 mod extractors;
 mod exceptions;
+mod services;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    
+    let redis_cfg = Config::from_url("redis://127.0.0.1:6379");
+    let redis_pool = redis_cfg.create_pool(Some(Runtime::Tokio1)).unwrap();
+    
+    let store = RedisSessionStore::new_pooled(redis_pool).await.unwrap();
+
     let db: DatabaseConnection = Database::connect("postgresql://nico:14142135@142.93.32.117:5432/postgres").await.unwrap();
     let a = user::Entity::find().all(&db).await.unwrap();
 

@@ -14,7 +14,7 @@ pub enum Error {
     #[error("{0}")]
     Auth(#[from] AuthenticateError),
     
-    #[error("Internal Server Error")]
+    #[error("Internal Server Error: {0}")]
     InternalServer(String),
 
     #[error("Parse request body exception !")]
@@ -27,7 +27,10 @@ pub enum Error {
     Cache(#[from] CacheError),
 
     #[error("{0}")]
-    Settings(#[from] SettingsError)
+    Settings(#[from] SettingsError),
+
+    #[error("Hash error !")]
+    Hash,
 }
 
 impl ResponseError for Error {
@@ -60,5 +63,11 @@ impl Responder for Error {
             Error::Parse(x) => Error::Parse(x).error_response(),
             _ => unimplemented!()
         }
+    }
+}
+
+impl From<bcrypt::BcryptError> for Error {
+    fn from(_: bcrypt::BcryptError) -> Self {
+        Error::Hash
     }
 }

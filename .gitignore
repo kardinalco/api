@@ -7,3 +7,4 @@ log/
 
 migration/target
 entity/target
+env.bat

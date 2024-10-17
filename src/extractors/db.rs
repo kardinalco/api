@@ -7,7 +7,7 @@ use crate::utils::state::AppState;
 use sea_orm::DatabaseConnection;
 use actix_web::web::Data;
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct DbReq(pub DatabaseConnection);
 
 impl FromRequest for DbReq {
@@ -17,8 +17,8 @@ impl FromRequest for DbReq {
     fn from_request(req: &HttpRequest, _: &mut Payload) -> Self::Future {
         let request = req.clone();
         Box::pin(async move {
-            let data = request.app_data::<Data<AppState>>();
-            Ok(DbReq(todo!()))
+            let data = request.app_data::<Data<AppState>>().ok_or(Error::InternalServer(String::from("value")))?;
+            Ok(DbReq(data.db.clone()))
         })
     }
 }

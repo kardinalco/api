@@ -6,11 +6,11 @@ edition = "2021"
 [dependencies]
 actix = {version = "0.13.5"}
 actix-web = {version = "4.9.0", features = []}
-serde_json = {version = "1.0.128", features = []}
+serde_json = {version = "1.0.129", features = []}
 serde = {version = "1.0.210", features = ["derive"]}
 uuid = { version = "1.10.0", features = ["v4", "serde", "v7"]}
 dotenv = {version = "0.15.0", features = []}
-bb8 = "0.8.5"
+bb8 = "0.8.6"
 bb8-redis = "0.17.0"
 chrono = {version = "0.4.38", features = ["serde"]}
 redis = {version = "0.27.4", features = ["serde", "uuid", "serde_json", "tokio-comp"]}
@@ -29,4 +29,6 @@ migration = { path = "migration" }
 
 sea-orm = { version = "1.1.0", features = ["sqlx-postgres", "runtime-tokio-rustls", "macros", "with-chrono"] }
 
+deadpool-redis = {version = "0.18.0", features = ["rt_tokio_1", "serde"]}
+actix-session = {version = "0.10.1", features = ["redis-pool", "redis-session"]}
 config = { version = "0.14.0" }
