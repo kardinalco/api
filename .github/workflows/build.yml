@@ -15,10 +15,12 @@ jobs:
       matrix:
         os: [ ubuntu-latest, macos-latest, windows-latest ]
     steps:
-      - name: Checkout sources
+      - name: "Checkout sources"
         uses: actions/checkout@v4
-      - uses: actions-rust-lang/setup-rust-toolchain@v1
-      - run: |
+      - name: "Initialize rust toolchain"
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+      - name: "Print versions"
+        run: |
           cargo +stable --version
           rustc +stable --version
       - name: "Cargo check, test and build"
