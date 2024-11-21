@@ -25,6 +25,5 @@ jobs:
           rustc +stable --version
       - name: "Cargo check, test and build"
         run: |
-            cargo check --all
             cargo test --all
             cargo build --release

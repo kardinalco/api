@@ -1,7 +1,6 @@
 use actix_web::{HttpRequest, HttpResponse, Responder};
 use actix_web::body::BoxBody;
 use serde::{Serialize};
-use crate::utils::response::Response;
 
 #[derive(Debug, Serialize)]
 pub struct User {
