@@ -1,4 +1,4 @@
-name: "Build & Test"
+name: "Check, test and build API"
 
 on:
   push:
@@ -18,8 +18,7 @@ jobs:
       - name: Checkout sources
         uses: actions/checkout@v4
       - uses: actions-rust-lang/setup-rust-toolchain@v1
-        shell: bash
-        run: |
+      - run: |
           cargo +stable --version
           rustc +stable --version
       - name: "Cargo check, test and build"
