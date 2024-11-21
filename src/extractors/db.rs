@@ -7,8 +7,14 @@ use crate::utils::state::AppState;
 use sea_orm::DatabaseConnection;
 use actix_web::web::Data;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct DbReq(pub DatabaseConnection);
+
+impl DbReq {
+    pub fn into_inner(self) -> DatabaseConnection {
+        self.0
+    }
+}
 
 impl FromRequest for DbReq {
     type Error = Error;

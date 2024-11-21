@@ -1,29 +1,32 @@
+use actix_session::Session;
 use actix_web::{Responder};
 use actix_web::web::{post, scope};
 use tracing::instrument;
 use crate::api::auth::request::{AuthLoginRequest, AuthRegisterRequest};
-use crate::exceptions::auth::AuthenticateError;
-use crate::exceptions::error::Error;
+use crate::domain::auth::AuthDomain;
+use crate::extractors::auth_session::AuthSession;
+use crate::extractors::db::DbReq;
 use crate::extractors::dto::Dto;
 use crate::utils::route::Route;
 
 pub struct AuthRoute;
 
+
 impl AuthRoute {
     
-    #[instrument(name = "auth::login", skip(body))]
-    async fn login(body: Dto<AuthLoginRequest>) -> impl Responder {
-        Error::Auth(AuthenticateError::WrongCredentials)
+    #[instrument(name = "auth::login", skip(s, body))]
+    async fn login(body: Dto<AuthLoginRequest>, s: Session, db: DbReq) -> impl Responder {
+        AuthDomain::login(body.0, db.0, s).await
     }
 
     #[instrument(name = "auth::register", skip(body))]
-    async fn register(body: Dto<AuthRegisterRequest>) -> impl Responder {
-        ""
+    async fn register(body: Dto<AuthRegisterRequest>, db: DbReq) -> impl Responder {
+        AuthDomain::register(body.0, db.0).await
     }
 
-    #[instrument]
-    async fn logout() -> impl Responder {
-        ""
+    #[instrument(name = "auth::logout", skip(auth_session))]
+    async fn logout(auth_session: AuthSession) -> impl Responder {
+        AuthDomain::logout(auth_session).await
     }
 
     #[instrument]

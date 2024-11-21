@@ -1,36 +1,49 @@
 use actix_web::Responder;
 use actix_web::web::{get, post, put, scope, delete};
+use tracing::instrument;
+use crate::api::user::response::UserListResponse;
+use crate::domain::user::UserDomain;
+use crate::exceptions::error::Error;
+use crate::extractors::auth_session::AuthSession;
+use crate::extractors::db::DbReq;
 use crate::utils::route::Route;
 
 pub struct UserRoute;
 
 impl UserRoute {
-    
-    pub async fn get_user() -> impl Responder {
-        //user_repo(unimplemented!()).find_user_by_id();
+
+    #[instrument]
+    pub async fn get_user(_: AuthSession) -> impl Responder {
         ""
     }
 
-    pub async fn update_user() -> impl Responder {
-        ""
-    }
-    
-    pub async fn create_user() -> impl Responder {
+    #[instrument]
+    pub async fn update_user(_: AuthSession) -> impl Responder {
         ""
     }
 
-    pub async fn delete_user() -> impl Responder {
+    #[instrument]
+    pub async fn create_user(_: AuthSession) -> impl Responder {
         ""
     }
-    
-    pub async fn list_user() -> impl Responder {
+
+    #[instrument]
+    pub async fn delete_user(_: AuthSession) -> impl Responder {
         ""
     }
-    
-    pub async fn update_user_profile_picture() -> impl Responder {
+
+    #[instrument(skip(session))]
+    pub async fn list_user(session: AuthSession, db: DbReq) -> Result<UserListResponse, Error> {
+        UserDomain::list_user(session, db.into_inner()).await?;
+        todo!()
+    }
+
+    #[instrument]
+    pub async fn update_user_profile_picture(_: AuthSession) -> impl Responder {
         ""
     }
-    
+
+    #[instrument]
     pub async fn delete_user_profile_picture() -> impl Responder {
         ""
     }

@@ -1,26 +1,26 @@
+use actix_web::ResponseError;
 use serde::Serialize;
 
 #[derive(Debug, thiserror::Error, Serialize)]
 #[error("...")]
 pub enum DatabaseError {
-    #[error("Error querying the database")]
-    QueryError,
-
-    #[error("Error inserting into the database")]
-    InsertError,
-
-    #[error("Error updating the database")]
-    UpdateError,
-
-    #[error("Error deleting from the database")]
-    DeleteError,
-
     #[error("Connection error: {0}")]
     ConnectionError(String)
 }
 
+impl ResponseError for DatabaseError {
+    fn status_code(&self) -> actix_web::http::StatusCode {
+        actix_web::http::StatusCode::INTERNAL_SERVER_ERROR
+    }
+    
+    fn error_response(&self) -> actix_web::HttpResponse {
+        actix_web::HttpResponse::InternalServerError().finish()
+    }
+}
+
 impl From<sea_orm::error::DbErr> for DatabaseError {
     fn from(value: sea_orm::error::DbErr) -> Self {
+        println!("{:?}", value);
         match value {
             _ => Self::ConnectionError(String::from("TODO"))
         }

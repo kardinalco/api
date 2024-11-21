@@ -11,6 +11,12 @@ use crate::exceptions::error::Error;
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Dto<T: DeserializeOwned + Validate>(pub T);
 
+impl<T: DeserializeOwned + Validate> Dto<T> {
+    pub fn into_inner(self) -> T {
+        self.0
+    }
+}
+
 impl<T: DeserializeOwned + Validate + 'static> FromRequest for Dto<T> {
     type Error = Error;
     type Future = Pin<Box<dyn Future<Output = Result<Self, Self::Error>>>>;

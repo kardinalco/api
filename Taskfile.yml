@@ -1,0 +1,16 @@
+# https://taskfile.dev
+
+version: '3'
+
+tasks:
+  build:
+    cmd: cargo build
+  migrate:
+    cmds:
+      - sea-orm-cli migrate fresh
+      - sea-orm-cli generate entity -o entity/src -l --with-serde deserialize
+  dev:
+    cmds:
+      - echo "Starting development server..."
+      - set -a && source .env && set +a
+      - cargo watch -x run

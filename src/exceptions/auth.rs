@@ -1,6 +1,8 @@
 use actix_web::{HttpResponse, ResponseError};
 use actix_web::body::BoxBody;
+use actix_web::http::StatusCode;
 use serde::Serialize;
+use serde_json::json;
 
 #[derive(Debug, thiserror::Error, Serialize)]
 #[error("...")]
@@ -8,22 +10,29 @@ pub enum AuthenticateError {
     #[error("Wrong authentication credentials")]
     WrongCredentials,
 
-    #[error("Invalid reset password token")]
-    InvalidResetPasswordToken,
+    #[error("Email already used")]
+    UserAlreadyRegistered,
+
+    #[error("Invalid session, try to login before")]
+    NeedSession,
+
+    #[error("Cannot create user session, wait a moment and try again !")]
+    CannotCreateUserSession,
+    
+    
 }
 
 impl ResponseError for AuthenticateError {
-    fn status_code(&self) -> actix_web::http::StatusCode {
+    fn status_code(&self) -> StatusCode {
         match self {
-            AuthenticateError::WrongCredentials => actix_web::http::StatusCode::UNAUTHORIZED,
-            AuthenticateError::InvalidResetPasswordToken => actix_web::http::StatusCode::UNAUTHORIZED,
+            AuthenticateError::WrongCredentials => StatusCode::UNAUTHORIZED,
+            _ => StatusCode::UNAUTHORIZED,
         }
     }
 
     fn error_response(&self) -> HttpResponse<BoxBody> {
         HttpResponse::build(self.status_code())
-            .json(self.to_string())
+            .json(json!({"message": self.to_string()}))
             .into()
     }
 }
-

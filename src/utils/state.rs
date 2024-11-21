@@ -15,12 +15,12 @@ impl AppState {
     pub async fn new() -> Result<Self, Error> {
         let settings = Settings::new()?;
         Ok(Self {
-            db: build_db(settings.clone().database.url).await?,
-            settings: settings,
+            db: build_db(&settings.database.url).await?,
+            settings,
         })
     }
 }
 
-pub async fn build_db(url: String) -> Result<DatabaseConnection, DatabaseError> {
+pub async fn build_db(url: &String) -> Result<DatabaseConnection, DatabaseError> {
     Ok(Database::connect(url).await?)
 }

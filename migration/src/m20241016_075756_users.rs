@@ -9,15 +9,14 @@ pub struct Migration;
 impl MigrationTrait for Migration {
     async fn up(&self, manager: &SchemaManager) -> Result<(), DbErr> {
         manager.create_type(Type::create().as_enum(Alias::new("registered_with")).values(RegisteredWith::iter()).to_owned()).await?;
-
         manager
             .create_table(
                 Table::create()
                     .table(User::Table)
                     .if_not_exists()
-                    .col(pk_uuid(User::Id))
+                    .col(string_len_uniq(User::Id, 24).primary_key())
                     .col(string_len(User::FirstName, 64))
-                    .col(string_len_null(User::LastName, 64))
+                    .col(string_len(User::LastName, 64))
                     .col(string_len_uniq(User::Email, 128))
                     .col(string_len(User::Password, 128))
                     .col(boolean(User::IsActive).default(false))
@@ -31,11 +30,11 @@ impl MigrationTrait for Migration {
                     .col(text_null(User::Picture))
                     .col(enumeration(User::RegisteredWith, Alias::new("registered_with"), RegisteredWith::iter()).default(RegisteredWith::Native))
                     .col(date_time(User::CreatedAt).default("now()"))
-                    .col(uuid_null(User::CreatedBy))
+                    .col(string_len_null(User::CreatedBy, 24))
                     .col(date_time_null(User::UpdatedAt))
-                    .col(uuid_null(User::UpdatedBy))
+                    .col(string_len_null(User::UpdatedBy, 24))
                     .col(date_time_null(User::DeletedAt))
-                    .col(uuid_null(User::DeletedBy))
+                    .col(string_len_null(User::DeletedBy, 24))
                     .foreign_key(ForeignKey::create().name("fk_created_by_user_id").from(User::Table, User::CreatedBy).to(User::Table, User::Id).on_delete(ForeignKeyAction::SetNull).on_update(ForeignKeyAction::Cascade))
                     .foreign_key(ForeignKey::create().name("fk_updated_by_user_id").from(User::Table, User::UpdatedBy).to(User::Table, User::Id).on_delete(ForeignKeyAction::SetNull).on_update(ForeignKeyAction::Cascade))
                     .foreign_key(ForeignKey::create().name("fk_deleted_by_user_id").from(User::Table, User::DeletedBy).to(User::Table, User::Id).on_delete(ForeignKeyAction::SetNull).on_update(ForeignKeyAction::Cascade))
@@ -52,7 +51,7 @@ impl MigrationTrait for Migration {
 }
 
 #[derive(EnumIter, DeriveActiveEnum, DeriveIden)]
-#[sea_orm(enum_name = "payment_options", rs_type = "String", db_type = "Enum")]
+#[sea_orm(rs_type = "String", db_type = "Enum")]
 enum RegisteredWith {
     #[sea_orm(string_value = "native")]
     Native,

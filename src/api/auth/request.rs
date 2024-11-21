@@ -1,5 +1,10 @@
+use cuid2::cuid;
+use entity::user;
+use sea_orm::ActiveValue::Set;
 use serde::Deserialize;
 use validator::Validate;
+use crate::exceptions::error::Error;
+use crate::services::hash::hash;
 
 #[derive(Deserialize, Debug, Clone, Validate)]
 pub struct AuthLoginRequest {
@@ -21,23 +26,22 @@ pub struct AuthRegisterRequest {
     pub lastname: String,
 }
 
-#[derive(Deserialize, Debug, Clone)]
-pub struct AuthLogoutRequest {
-    pub email: String,
-}
-
-#[derive(Deserialize, Debug, Clone)]
-pub struct AuthForgotPasswordRequest {
-    pub email: String,
-}
-
-#[derive(Deserialize, Debug, Clone)]
-pub struct AuthResetPasswordRequest {
-    pub email: String,
-    pub password: String,
-}
-
-#[derive(Deserialize, Debug, Clone)]
-pub struct AuthLoginResponse {
-    pub token: String,
+impl AuthRegisterRequest {
+    pub fn into_model(self) -> user::ActiveModel {
+        user::ActiveModel {
+            id: Set(cuid()),
+            email: Set(self.email),
+            first_name: Set(self.firstname),
+            last_name: Set(self.lastname),
+            password: Set(self.password),
+            ..Default::default()
+        }
+    }
+    
+    pub fn hash_password(self) -> Result<Self, Error> {
+        Ok(Self {
+            password: hash(&self.password)?,
+            ..self
+        })
+    }
 }

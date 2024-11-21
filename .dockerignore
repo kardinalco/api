@@ -1,6 +1,10 @@
 target/
+migration/
 .github
-prisma-cli
 .dockerignore
 .env
 .gitignore
+Dockerfile
+Taskfile.yml
+README.md
+apispecification.json

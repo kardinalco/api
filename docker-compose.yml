@@ -6,11 +6,10 @@ services:
           context: .
           dockerfile: Dockerfile
       ports:
-      - "8000:8000"
+      - "3000:3000"
       depends_on:
-      - db
-      environment:
-      - DATABASE_URL=postgres://postgres:postgres@db:5432/postgres
+        - db
+      env_file: .env
     cache:
         container_name: home_cache
         image: redis/redis-stack:7.4.0-v1
@@ -25,11 +24,13 @@ services:
       ports:
       - "5432:5432"
       volumes:
-      - db_data:/var/lib/postgresql/data
+        - db_data:/var/lib/postgresql/data
       environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=postgres
+      - POSTGRES_USER=home_usr
+      - POSTGRES_PASSWORD=home_password
+      - POSTGRES_DB=home_db
+
+
 volumes:
-    db_data:
-    cache_date:
+  db_data:
+  cache_date:
