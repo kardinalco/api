@@ -61,3 +61,19 @@ pub enum RegisteredWith {
     #[sea_orm(string_value = "native")]
     Native,
 }
+#[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum, Deserialize)]
+#[sea_orm(rs_type = "String", db_type = "Enum", enum_name = "settings_type")]
+pub enum SettingsType {
+    #[sea_orm(string_value = "boolean")]
+    Boolean,
+    #[sea_orm(string_value = "boolean_array")]
+    BooleanArray,
+    #[sea_orm(string_value = "number")]
+    Number,
+    #[sea_orm(string_value = "secret")]
+    Secret,
+    #[sea_orm(string_value = "string")]
+    String,
+    #[sea_orm(string_value = "string_array")]
+    StringArray,
+}

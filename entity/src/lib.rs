@@ -9,5 +9,6 @@ pub mod permission;
 pub mod role;
 pub mod role_permission;
 pub mod sea_orm_active_enums;
+pub mod settings;
 pub mod user;
 pub mod user_role;

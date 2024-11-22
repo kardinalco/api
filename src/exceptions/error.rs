@@ -119,9 +119,15 @@ impl From<anyhow::Error> for CacheError {
     }
 }
 
-
 impl From<RunError<RedisError>> for Error {
     fn from(_value: RunError<RedisError>) -> Self {
+        todo!()
+    }
+}
+
+impl From<anyhow::Error> for Error {
+    fn from(value: anyhow::Error) -> Self {
+        println!("{:?}", value);
         todo!()
     }
 }

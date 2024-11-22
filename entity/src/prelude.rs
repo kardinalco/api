@@ -6,5 +6,6 @@ pub use super::password::Entity as Password;
 pub use super::permission::Entity as Permission;
 pub use super::role::Entity as Role;
 pub use super::role_permission::Entity as RolePermission;
+pub use super::settings::Entity as Settings;
 pub use super::user::Entity as User;
 pub use super::user_role::Entity as UserRole;
