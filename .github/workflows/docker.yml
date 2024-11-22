@@ -12,8 +12,10 @@ jobs:
         include:
           - dockerfile: ./Dockerfile
             image: kardinal_api
+            context: .
           - dockerfile: ./migration/Dockerfile
             image: kardinal_migration
+            context: ./migration
     permissions:
       contents: read
       packages: write
@@ -42,7 +44,7 @@ jobs:
         id: push
         uses: docker/build-push-action@v6
         with:
-          context: .
+          context: ${{ matrix.context }}
           file: ${{ matrix.dockerfile }}
           platforms: linux/amd64
           push: true
