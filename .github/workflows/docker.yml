@@ -14,12 +14,12 @@ jobs:
             image: kardinal_api
             context: .
             name: "Api"
-            deploy_url: ${{ secrets.API_DEPLOY_WEBHOOK }}%
+            deploy_url: ${{ secrets.API_DEPLOY_WEBHOOK }}
           - dockerfile: ./migration/Dockerfile
             image: kardinal_migration
             context: ./migration
             name: "Migration"
-            deploy_url: ${{ secrets.MIGRATION_DEPLOY_WEBHOOK }}%
+            deploy_url: ${{ secrets.MIGRATION_DEPLOY_WEBHOOK }}
     permissions:
       contents: read
       packages: write
@@ -63,4 +63,4 @@ jobs:
       - name: 'Webhook to autodeploy ${{ matrix.name }} service'
         uses: fjogeleit/http-request-action@v1
         with:
-          url: ${{ matrix.deploy_url }}%
+          url: ${{ matrix.deploy_url }}
