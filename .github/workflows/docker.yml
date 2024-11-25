@@ -13,13 +13,9 @@ jobs:
           - dockerfile: ./Dockerfile
             image: kardinal_api
             context: .
-            name: "Api"
-            deploy_url: ${{ secrets.API_DEPLOY_WEBHOOK }}
           - dockerfile: ./migration/Dockerfile
             image: kardinal_migration
             context: ./migration
-            name: "Migration"
-            deploy_url: ${{ secrets.MIGRATION_DEPLOY_WEBHOOK }}
     permissions:
       contents: read
       packages: write
@@ -60,7 +56,11 @@ jobs:
           subject-name: ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}
           subject-digest: ${{ steps.push.outputs.digest }}
           push-to-registry: true
-      - name: 'Webhook to autodeploy ${{ matrix.name }} service'
+      - name: 'Webhook to deploy Api service'
         uses: fjogeleit/http-request-action@v1
         with:
-          url: ${{ matrix.deploy_url }}
+          url: ${{ secrets.API_DEPLOY_WEBHOOK }}
+      - name: 'Webhook to deploy Migration service'
+        uses: fjogeleit/http-request-action@v1
+        with:
+          url: ${{ secrets.MIGRATION_DEPLOY_WEBHOOK }}
