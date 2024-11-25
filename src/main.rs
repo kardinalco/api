@@ -21,7 +21,10 @@ use crate::api::house::handler::HouseRoute;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    let state: AppState = AppState::new().await.unwrap();
+    let state: AppState = AppState::new().await.map_err(|e| {
+        println!("Error: {:?}", e);
+        std::io::Error::new(std::io::ErrorKind::Other, "Failed to start server")
+    })?;
     let settings = state.settings.clone();
     println!("Starting server ...");
     HttpServer::new(move || {

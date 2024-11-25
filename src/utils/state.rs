@@ -29,5 +29,5 @@ pub async fn build_db(url: &String) -> Result<DatabaseConnection, DatabaseError>
 }
 
 pub async fn build_redis_session_store(url: &String) -> Result<RedisSessionStore, Error> {
-    Ok(RedisSessionStore::new("/***/").await?)
+    Ok(RedisSessionStore::new(url).await?)
 }
