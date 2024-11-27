@@ -13,9 +13,9 @@ jobs:
           - dockerfile: ./Dockerfile
             image: kardinal_api
             context: .
-          - dockerfile: ./migration/Dockerfile
+          - dockerfile: ./Dockerfile.migration
             image: kardinal_migration
-            context: ./migration
+            context: .
     permissions:
       contents: read
       packages: write
