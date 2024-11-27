@@ -1,32 +1,45 @@
 use actix_session::Session;
-use actix_web::http::StatusCode;
-use actix_web::HttpResponse;
+use bb8::Pool;
+use bb8_redis::RedisConnectionManager;
+use cuid2::cuid;
 use entity::prelude::User;
+use entity::sea_orm_active_enums::RegisteredWith;
 use entity::user::Column::{DeletedBy, Email};
 use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
+use sea_orm::ActiveValue::Set;
+use tracing::instrument;
 use crate::api::auth::request::{AuthLoginRequest, AuthRegisterRequest};
-use crate::api::auth::response::{AuthLoginResponse, AuthRegisterResponse};
+use crate::domain::settings::google::GoogleSettings;
 use crate::exceptions::auth::AuthenticateError;
 use crate::exceptions::error::Error;
 use crate::extractors::auth_session::AuthSession;
+use crate::services::cache::CachedSettings;
+use crate::services::google::GoogleService;
 
 pub struct AuthDomain;
 
 impl AuthDomain {
-    pub async fn login(body: AuthLoginRequest, db: DatabaseConnection, session: Session) -> Result<AuthLoginResponse, Error> {
+    #[instrument(skip(body, db, session))]
+    pub async fn login(body: AuthLoginRequest, db: DatabaseConnection, session: Session) -> Result<entity::user::Model, Error> {
         let user = User::find()
             .filter(Email.eq(body.email.clone()))
+            .filter(entity::user::Column::RegisteredWith.eq(RegisteredWith::Native))
             .filter(DeletedBy.is_null())
             .one(&db)
             .await?.ok_or(AuthenticateError::WrongCredentials)?;
-        if !bcrypt::verify(&body.password, user.password.as_str())? {
+        Self::insert_session(&session, user.clone(), body.password)?;
+        Ok(user)
+    }
+
+    pub fn insert_session(session: &Session, user: entity::user::Model, password: String) -> Result<(), Error> {
+        if !bcrypt::verify(&password, user.password.as_str())? {
             return Err(AuthenticateError::WrongCredentials.into());
         }
         session.insert("user_id", user.id.clone())?;
-        Ok(AuthLoginResponse::new(user))
+        Ok(())
     }
 
-    pub async fn register(body: AuthRegisterRequest, db: DatabaseConnection) -> Result<AuthRegisterResponse, Error> {
+    pub async fn register(body: AuthRegisterRequest, db: DatabaseConnection) -> Result<(), Error> {
         let user = User::find()
             .filter(Email.eq(body.email.clone()))
             .one(&db)
@@ -35,11 +48,48 @@ impl AuthDomain {
             return Err(AuthenticateError::UserAlreadyRegistered.into());
         }
         body.hash_password()?.into_model().insert(&db).await?;
-        Ok(AuthRegisterResponse { message: "User registered successfully" })
+        Ok(())
     }
 
-    pub async fn logout(auth_session: AuthSession) -> Result<HttpResponse, Error> {
+    #[instrument(skip(auth_session), fields(user_id = %auth_session.user.id))]
+    pub async fn logout(auth_session: AuthSession) -> Result<(), Error> {
         auth_session.session.remove("user_id");
-        Ok(HttpResponse::new(StatusCode::OK))
+        Ok(())
+    }
+
+    #[instrument(skip(db, cache))]
+    pub async fn build_google_auth_url(db: &DatabaseConnection, cache: &Pool<RedisConnectionManager>) -> Result<String, Error> {
+        let google_auth = GoogleSettings::get(cache, db).await?.into_inner();
+        if !google_auth.is_enabled() {
+            return Err(AuthenticateError::ThirdPartyNotEnabled("Google Auth").into());
+        }
+        Ok(google_auth.build_authorize_url())
+    }
+
+    #[instrument(skip(db, cache, session))]
+    pub async fn login_with_google(db: &DatabaseConnection, cache: &Pool<RedisConnectionManager>, session: &Session, code: &str) -> Result<entity::user::Model, Error> {
+        let google_auth = GoogleSettings::get(cache, db).await?.into_inner();
+        if !google_auth.is_enabled() {
+            return Err(AuthenticateError::ThirdPartyNotEnabled("Google Auth").into());
+        }
+        let r = GoogleService::login(&google_auth, code).await?;
+        let info = GoogleService::get_user(&google_auth, &r.access_token).await?;
+        let user = if let Some(user) = User::find().filter(Email.eq(info.clone().email)).one(db).await? {
+            user
+        } else {
+            entity::user::ActiveModel {
+                id: Set(cuid()),
+                registered_with: Set(RegisteredWith::Google),
+                email: Set(info.email),
+                is_active: Set(true),
+                is_deleted: Set(false),
+                password: Set(cuid()),
+                first_name: Set(info.given_name),
+                last_name: Set(info.family_name.unwrap_or(".....".to_string())),
+                ..Default::default()
+            }.insert(db).await?
+        };
+        session.insert("user_id", user.id.clone())?;
+        Ok(user)
     }
 }

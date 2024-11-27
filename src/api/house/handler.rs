@@ -26,7 +26,7 @@ impl HouseRoute {
         Ok(HouseCreatedResponse::new(created_house))
     }
 
-    #[instrument(skip(session))]
+    #[instrument(skip(session, db))]
     pub async fn list_house(session: AuthSession, db: DbReq) -> Result<HouseListResponse, Error> {
         let houses = HouseDomain::list_house(session, db.into_inner()).await?;
         Ok(HouseListResponse::new(houses))
@@ -38,16 +38,26 @@ impl HouseRoute {
         Ok(UserListResponse::new(house_with_users.1))
     }
 
-    #[instrument(skip(session))]
+    #[instrument(skip(session, db))]
     pub async fn invite_users(session: AuthSession, db: DbReq, path: Path<String>, body: Dto<HouseInviteUserRequest>) -> Result<HouseInviteResponse, Error> {
-        HouseDomain::invite_users(session, body.into_inner(), db.into_inner()).await?;
+        HouseDomain::invite_users(session, db.into_inner(), &path.into_inner(), &body.into_inner().users).await?;
         Ok(HouseInviteResponse {})
     }
 
-    #[instrument(skip(session))]
+    #[instrument(skip(session, db))]
     pub async fn revoke_users(session: AuthSession, db: DbReq, path: Path<String>, body: Dto<HouseRevokeUserRequest>) -> Result<HouseRevokeResponse, Error> {
-        HouseDomain::revoke_users(session, body.into_inner(), db.into_inner()).await?;
+        HouseDomain::revoke_users(session, db.into_inner(), &path.into_inner(), &body.into_inner().users).await?;
         Ok(HouseRevokeResponse {})
+    }
+
+    #[instrument(skip(_session, _db))]
+    pub async fn accept_invitation(_session: AuthSession, _db: DbReq, _path: Path<String>, _body: Dto<HouseInviteUserRequest>) -> Result<HouseInviteResponse, Error> {
+        Ok(HouseInviteResponse {})
+    }
+
+    #[instrument(skip(_session, _db))]
+    pub async fn decline_invitation(_session: AuthSession, _db: DbReq, _path: Path<String>, _body: Dto<HouseInviteUserRequest>) -> Result<HouseInviteResponse, Error> {
+        Ok(HouseInviteResponse {})
     }
 
     #[instrument(skip(session))]
@@ -84,6 +94,8 @@ impl Route for HouseRoute {
                 .route("{house_id}", delete().to(Self::delete_house))
                 .route("{house_id}/users", post().to(Self::invite_users))
                 .route("{house_id}/users", delete().to(Self::revoke_users))
+                .route("{house_id}/users/accept", delete().to(Self::accept_invitation))
+                .route("{house_id}/users/decline", delete().to(Self::decline_invitation))
                 .route("{house_id}/expenses", delete().to(Self::list_expense))
                 .route("{house_id}/credentials", delete().to(Self::list_credentials))
         );

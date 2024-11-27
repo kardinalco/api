@@ -18,8 +18,9 @@ pub enum AuthenticateError {
 
     #[error("Cannot create user session, wait a moment and try again !")]
     CannotCreateUserSession,
-    
-    
+
+    #[error("'{0}' third party is not enabled")]
+    ThirdPartyNotEnabled(&'static str),
 }
 
 impl ResponseError for AuthenticateError {

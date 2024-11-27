@@ -48,7 +48,7 @@ impl RoleDomain {
            .with_created_user::<RoleCreatedByUser>()
            .one(db)
            .await?;
-        Ok(role.ok_or(Error::Entity(EntityError::NotFound("".to_string())))?)
+        Ok(role.ok_or(Error::Entity(EntityError::NotFound("Role", name.to_owned())))?)
     }
 
     #[instrument(skip(db))]

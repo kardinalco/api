@@ -5,6 +5,7 @@ use actix_session::Session;
 use actix_web::{FromRequest, HttpRequest};
 use actix_web::dev::Payload;
 use sea_orm::EntityTrait;
+use tracing::instrument;
 use crate::exceptions::auth::AuthenticateError::NeedSession;
 use crate::exceptions::error::Error;
 use crate::extractors::db::DbReq;
@@ -18,6 +19,7 @@ impl FromRequest for AuthSession {
     type Error = Error;
     type Future = Pin<Box<dyn Future<Output=Result<Self, Self::Error>>>>;
 
+    #[instrument(skip(req))]
     fn from_request(req: &HttpRequest, _: &mut Payload) -> Self::Future {
         let request = req.clone(); 
         Box::pin(async move {

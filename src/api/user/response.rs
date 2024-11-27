@@ -53,3 +53,19 @@ impl Responder for UserListResponse {
         HttpResponse::Ok().json(self)
     }
 }
+
+pub struct UserResponse(pub User);
+
+impl UserResponse {
+    pub fn new(user: entity::user::Model) -> Self {
+        UserResponse(User::from_model(user))
+    }
+}
+
+impl Responder for UserResponse {
+    type Body = BoxBody;
+
+    fn respond_to(self, _: &HttpRequest) -> HttpResponse<Self::Body> {
+        HttpResponse::Ok().json(self.0)
+    }
+}

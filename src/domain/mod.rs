@@ -3,3 +3,4 @@ pub mod user;
 pub mod house;
 pub mod permission;
 pub mod role;
+pub mod settings;

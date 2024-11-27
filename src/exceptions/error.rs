@@ -9,6 +9,7 @@ use serde::Serialize;
 use serde_json::json;
 use crate::exceptions::auth::AuthenticateError::CannotCreateUserSession;
 use crate::exceptions::entity::EntityError;
+use crate::exceptions::request::RequestError;
 use super::auth::AuthenticateError;
 use super::cache::CacheError;
 use super::db::DatabaseError;
@@ -40,6 +41,9 @@ pub enum Error {
 
     #[error("Hash error !")]
     Hash,
+    
+    #[error("{0}")]
+    Request(RequestError)
 }
 
 impl ResponseError for Error {
@@ -59,6 +63,7 @@ impl ResponseError for Error {
             Error::Parse(_) => HttpResponse::BadRequest().json(json!(self)),
             Error::Database(e) => e.error_response(),
             Error::Entity(e) => e.error_response(),
+            Error::Request(e) => e.error_response(),
             _ => unimplemented!()
         }
     }
@@ -129,5 +134,21 @@ impl From<anyhow::Error> for Error {
     fn from(value: anyhow::Error) -> Self {
         println!("{:?}", value);
         todo!()
+    }
+}
+
+impl From<RedisError> for Error {
+    fn from(value: RedisError) -> Self {
+        println!("{:?}", value);
+        match value.kind() {
+            redis::ErrorKind::TypeError => Error::InternalServer("Cannot parse value".to_string()),
+            _ => Error::InternalServer("Unknown error".to_string()),
+        }
+    }
+}
+
+impl From<RequestError> for Error {
+    fn from(value: RequestError) -> Self {
+        Error::Request(value)
     }
 }

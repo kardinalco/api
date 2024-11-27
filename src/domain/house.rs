@@ -1,17 +1,17 @@
 use entity::house::Model;
 use entity::prelude::*;
-use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, DbBackend, EntityTrait, IntoActiveModel, QueryFilter, QuerySelect, RelationTrait, Statement};
+use entity::sea_orm_active_enums::HouseUserStatus;
+use entity::{house_user, user};
+use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, DbBackend, EntityTrait, IntoActiveModel, QueryFilter, QuerySelect, QueryTrait, RelationTrait, Statement};
 use sea_orm::ActiveValue::Set;
 use sea_orm::JoinType::LeftJoin;
 use sea_orm::sea_query::Alias;
-use crate::api::house::request::{HouseCreateRequest, HouseInviteUserRequest, HouseRevokeUserRequest, HouseUpdateRequest};
+use crate::api::house::request::{HouseCreateRequest, HouseUpdateRequest};
 use crate::exceptions::entity::EntityError;
 use crate::exceptions::error::Error;
 use crate::extractors::auth_session::AuthSession;
 
 pub struct HouseDomain;
-
-// 0801820036
 
 impl HouseDomain {
     
@@ -20,7 +20,7 @@ impl HouseDomain {
             .filter(entity::house::Column::DeletedAt.is_null())
             .one(db)
             .await?
-            .ok_or(Error::Entity(EntityError::NotFound("House".to_string())))
+            .ok_or(Error::Entity(EntityError::NotFound("House", house_id.to_owned())))
     }
     
     pub async fn get_active_house_with_users(house_id: &String, db: &DatabaseConnection) -> Result<(Model, Vec<entity::user::Model>), Error> {
@@ -34,7 +34,7 @@ impl HouseDomain {
             .await?;
         let (house, users) = match house_with_users.get(0) {
             Some(house) => Ok(house.to_owned()),
-            None => Err(Error::Entity(EntityError::NotFound("House".to_string())))
+            None => Err(Error::Entity(EntityError::NotFound("House", house_id.to_owned())))
         }?;
         Ok((house, users))
     }
@@ -60,13 +60,44 @@ impl HouseDomain {
                 .unwrap_or(vec![]))
     }
     
-    pub async fn invite_users(_: AuthSession, _: HouseInviteUserRequest, _: DatabaseConnection) -> Result<(), Error> {
-        todo!()
-        
+    pub async fn invite_users(_: AuthSession, db: DatabaseConnection, house_id: &String, users: &Vec<String>) -> Result<(), Error> {
+        let house = Self::find_active_house_by_id(house_id, &db).await?;
+        let users = user::Entity::find()
+            .filter(user::Column::Email.is_in(users))
+            .filter(user::Column::Id.ne(house.created_by))
+            .filter(user::Column::Id.not_in_subquery(
+                house_user::Entity::find()
+                    .select_only()
+                    .column(house_user::Column::UserId)
+                    .filter(house_user::Column::HouseId.eq(house_id))
+                    .into_query()
+            ))
+            .all(&db)
+            .await?;
+        HouseUser::insert_many(users.iter().map(|user| {
+            house_user::ActiveModel {
+                user_id: Set(user.id.clone()),
+                house_id: Set(house_id.clone()),
+                invited_at: Set(chrono::Utc::now().naive_utc()),
+                status: Set(HouseUserStatus::Pending.into()),
+                ..Default::default()
+            }
+        }).collect::<Vec<house_user::ActiveModel>>()).on_empty_do_nothing().exec(&db).await?;
+        Ok(())
     }
     
-    pub async fn revoke_users(_: AuthSession, _: HouseRevokeUserRequest, _: DatabaseConnection) -> Result<(), Error> {
-        todo!()
+    pub async fn revoke_users(_: AuthSession, db: DatabaseConnection, house_id: &String, users: &Vec<String>) -> Result<(), Error> {
+        Self::find_active_house_by_id(house_id, &db).await?;
+        house_user::Entity::delete_many()
+            .filter(house_user::Column::HouseId.eq(house_id))
+            .filter(house_user::Column::UserId.in_subquery(
+                user::Entity::find()
+                    .filter(user::Column::Email.is_in(users))
+                    .select_only()
+                    .column(user::Column::Id)
+                    .into_query()
+            )).exec(&db).await?;
+        Ok(())
     }
 
     pub async fn update_house(session: AuthSession, db: DatabaseConnection, house_id: String, body: HouseUpdateRequest) -> Result<Model, Error> {

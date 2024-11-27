@@ -27,7 +27,7 @@ impl PermissionDomain {
     pub async fn find_permission_by_id(db: &DatabaseConnection, id: &str) -> Result<Permission, Error> {
         Ok(permission::Entity::find_by_id(id).one(db)
             .await?
-            .ok_or(Error::Entity(EntityError::NotFound("".to_string())))?)
+            .ok_or(Error::Entity(EntityError::NotFound("Permission", id.to_owned())))?)
     }
 
     #[instrument(skip(db))]
@@ -37,6 +37,6 @@ impl PermissionDomain {
             .filter(permission::Column::Resource.eq(resource))
             .one(db)
             .await?
-            .ok_or(Error::Entity(EntityError::NotFound("".to_string())))?)
+            .ok_or(Error::Entity(EntityError::NotFound("Permission", format!("action: {}, resource: {}", action, resource))))?)
     }
 }

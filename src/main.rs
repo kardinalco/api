@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use actix_session::config::PersistentSession;
 use actix_session::SessionMiddleware;
 use actix_web::{web::Data, App, HttpServer};
@@ -17,6 +19,7 @@ mod domain;
 
 use actix_web::cookie::Key;
 use actix_web::cookie::time::Duration;
+use actix_web::middleware::{NormalizePath, TrailingSlash};
 use crate::api::house::handler::HouseRoute;
 
 #[actix_web::main]
@@ -26,7 +29,6 @@ async fn main() -> std::io::Result<()> {
         std::io::Error::new(std::io::ErrorKind::Other, "Failed to start server")
     })?;
     let settings = state.settings.clone();
-    println!("Starting server ...");
     HttpServer::new(move || {
         App::new()
             .wrap(
@@ -39,6 +41,7 @@ async fn main() -> std::io::Result<()> {
             .configure(AuthRoute::route)
             .configure(UserRoute::route)
             .configure(HouseRoute::route)
+            .wrap(NormalizePath::new(TrailingSlash::Trim))
     })
         .bind(format!("0.0.0.0:{}", settings.api.port))?
         .run()

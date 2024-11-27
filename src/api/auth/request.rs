@@ -15,6 +15,12 @@ pub struct AuthLoginRequest {
 }
 
 #[derive(Deserialize, Debug, Clone, Validate)]
+pub struct AuthLoginWithGoogleRequest {
+    #[validate(length(min = 8, max = 255))]
+    pub code: String,
+}
+
+#[derive(Deserialize, Debug, Clone, Validate)]
 pub struct AuthRegisterRequest {
     #[validate(email)]
     pub email: String,

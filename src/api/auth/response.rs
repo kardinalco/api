@@ -38,3 +38,49 @@ impl Responder for AuthRegisterResponse {
         HttpResponse::Ok().json(self)
     }
 }
+
+#[derive(Debug, Serialize)]
+pub struct GoogleGetUrlResponse {
+    pub message: String,
+    pub url: String
+}
+
+impl GoogleGetUrlResponse {
+    pub fn new(message: String, url: String) -> Self {
+        GoogleGetUrlResponse {
+            message,
+            url
+        }
+    }
+}
+
+impl Responder for GoogleGetUrlResponse {
+    type Body = BoxBody;
+
+    fn respond_to(self, _: &HttpRequest) -> HttpResponse<Self::Body> {
+        HttpResponse::Ok().json(self)
+    }
+}
+
+#[derive(Debug, Serialize)]
+pub struct GoogleLoginResponse {
+    pub message: &'static str,
+    pub user: User
+}
+
+impl GoogleLoginResponse {
+    pub fn new(user: entity::user::Model) -> Self {
+        Self {
+            user: User::from_model(user),
+            message: "Successfully logged in with Google"
+        }
+    }
+}
+
+impl Responder for GoogleLoginResponse {
+    type Body = BoxBody;
+
+    fn respond_to(self, _: &HttpRequest) -> HttpResponse<Self::Body> {
+        HttpResponse::Ok().json(self)
+    }
+}

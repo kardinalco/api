@@ -27,12 +27,15 @@ pub enum LogLevel {
     Error
 }
 
-#[derive(Serialize, Deserialize, Clone, Default)]
-pub struct Google {
-    pub client_id: String,
-    pub client_secret: String,
-    pub redirect_uri: String,
-    pub scope: String
+impl LogLevel {
+    pub fn as_str(&self) -> &str {
+        match self {
+            LogLevel::Debug => "debug",
+            LogLevel::Info => "info",
+            LogLevel::Warning => "warning",
+            LogLevel::Error => "error"
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Default)]
@@ -49,7 +52,6 @@ pub struct Api {
 pub struct Settings {
     pub database: Database,
     pub log: Log,
-    pub google: Google,
     pub redis: Redis,
     pub keys: Keys,
     pub api: Api

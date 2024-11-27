@@ -4,7 +4,7 @@ use actix_web::{FromRequest, HttpRequest};
 use actix_web::dev::Payload;
 use actix_web::web::Json;
 use serde::de::DeserializeOwned;
-use tracing::debug;
+use tracing::instrument;
 use validator::Validate;
 use crate::exceptions::error::Error;
 
@@ -21,8 +21,8 @@ impl<T: DeserializeOwned + Validate + 'static> FromRequest for Dto<T> {
     type Error = Error;
     type Future = Pin<Box<dyn Future<Output = Result<Self, Self::Error>>>>;
 
+    #[instrument(skip(req, payload))]
     fn from_request(req: &HttpRequest, payload: &mut Payload) -> Self::Future {
-        debug!("Extracting DTO from request");
         let json_extract = Json::<T>::from_request(req, payload);
         Box::pin(async move {
             let value = json_extract.await.map_err(|x| {
