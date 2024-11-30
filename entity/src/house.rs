@@ -16,6 +16,9 @@ pub struct Model {
     pub country: Option<String>,
     pub zip_code: Option<String>,
     pub address: Option<String>,
+    #[sea_orm(column_type = "Float")]
+    pub surface: f32,
+    pub rooms: Option<i32>,
     #[sea_orm(column_type = "Float", nullable)]
     pub latitude: Option<f32>,
     #[sea_orm(column_type = "Float", nullable)]
@@ -37,8 +40,18 @@ pub struct Model {
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
+    #[sea_orm(has_many = "super::credentials_house::Entity")]
+    CredentialsHouse,
+    #[sea_orm(has_many = "super::expense_house::Entity")]
+    ExpenseHouse,
+    #[sea_orm(has_many = "super::home_insurance_house::Entity")]
+    HomeInsuranceHouse,
     #[sea_orm(has_many = "super::house_user::Entity")]
     HouseUser,
+    #[sea_orm(has_many = "super::pet_house::Entity")]
+    PetHouse,
+    #[sea_orm(has_many = "super::provider_house::Entity")]
+    ProviderHouse,
     #[sea_orm(
         belongs_to = "super::user::Entity",
         from = "Column::CreatedBy",
@@ -65,9 +78,39 @@ pub enum Relation {
     User1,
 }
 
+impl Related<super::credentials_house::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::CredentialsHouse.def()
+    }
+}
+
+impl Related<super::expense_house::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::ExpenseHouse.def()
+    }
+}
+
+impl Related<super::home_insurance_house::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::HomeInsuranceHouse.def()
+    }
+}
+
 impl Related<super::house_user::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::HouseUser.def()
+    }
+}
+
+impl Related<super::pet_house::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::PetHouse.def()
+    }
+}
+
+impl Related<super::provider_house::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::ProviderHouse.def()
     }
 }
 

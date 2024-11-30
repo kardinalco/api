@@ -1,2 +1,2 @@
-    pub fn establish_test_connection() {
-    }
+
+pub fn establish_test_connection() {}

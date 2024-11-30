@@ -6,6 +6,9 @@ mod m20241016_075850_settings;
 mod m20241016_101754_houses;
 mod m20241021_143934_credentials;
 mod m20241021_143946_expenses;
+mod m20241128_102905_providers;
+mod m20241128_132112_home_insurance;
+mod m20241128_132448_pets;
 
 pub struct Migrator;
 
@@ -18,7 +21,10 @@ impl MigratorTrait for Migrator {
             Box::new(m20241016_075850_settings::Migration),
             Box::new(m20241016_101754_houses::Migration),
             Box::new(m20241021_143934_credentials::Migration),
-            /*Box::new(m20241021_143946_expenses::Migration),*/
+            Box::new(m20241021_143946_expenses::Migration),
+            Box::new(m20241128_102905_providers::Migration),
+            Box::new(m20241128_132112_home_insurance::Migration),
+            Box::new(m20241128_132448_pets::Migration),
         ]
     }
 }

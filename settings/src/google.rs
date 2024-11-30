@@ -60,7 +60,6 @@ impl GoogleUrl {
     pub fn set_user_info_url(&mut self, userinfo: String) {
         self.userinfo = userinfo;
     }
-
 }
 
 impl Default for GoogleUrl {
@@ -113,15 +112,20 @@ impl Google {
     }
 
     pub fn build_authorize_url(&self) -> String {
-        format!("{}?client_id={}&redirect_uri={}&scope={}&response_type={}", self.url.authorize, self.client_id, self.redirect_uri, self.scope, self.response_type)
+        format!(
+            "{}?client_id={}&redirect_uri={}&scope={}&response_type={}",
+            self.url.authorize, self.client_id, self.redirect_uri, self.scope, self.response_type
+        )
     }
 
     pub fn build_token_url(&self, code: &str) -> String {
-        format!("{}?code={}&client_secret={}&client_id={}&grant_type={}", self.url.token, code, self.client_secret, self.client_id, self.grant_type)
+        format!(
+            "{}?code={}&client_secret={}&client_id={}&grant_type={}",
+            self.url.token, code, self.client_secret, self.client_id, self.grant_type
+        )
     }
 
     pub fn get_url(&self) -> &GoogleUrl {
         &self.url
     }
-
 }

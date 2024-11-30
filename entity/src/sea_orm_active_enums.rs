@@ -28,6 +28,32 @@ pub enum CredentialsType {
     Wifi,
 }
 #[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum, Deserialize)]
+#[sea_orm(rs_type = "String", db_type = "Enum", enum_name = "expense_currency")]
+pub enum ExpenseCurrency {
+    #[sea_orm(string_value = "cny")]
+    Cny,
+    #[sea_orm(string_value = "eur")]
+    Eur,
+    #[sea_orm(string_value = "gbp")]
+    Gbp,
+    #[sea_orm(string_value = "jpy")]
+    Jpy,
+    #[sea_orm(string_value = "usd")]
+    Usd,
+}
+#[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum, Deserialize)]
+#[sea_orm(rs_type = "String", db_type = "Enum", enum_name = "expense_frequency")]
+pub enum ExpenseFrequency {
+    #[sea_orm(string_value = "daily")]
+    Daily,
+    #[sea_orm(string_value = "monthly")]
+    Monthly,
+    #[sea_orm(string_value = "weekly")]
+    Weekly,
+    #[sea_orm(string_value = "yearly")]
+    Yearly,
+}
+#[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum, Deserialize)]
 #[sea_orm(
     rs_type = "String",
     db_type = "Enum",
@@ -52,6 +78,30 @@ pub enum HouseUserStatus {
     Pending,
 }
 #[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum, Deserialize)]
+#[sea_orm(rs_type = "String", db_type = "Enum", enum_name = "payment_method")]
+pub enum PaymentMethod {
+    #[sea_orm(string_value = "bank_transfer")]
+    BankTransfer,
+    #[sea_orm(string_value = "card")]
+    Card,
+    #[sea_orm(string_value = "cash")]
+    Cash,
+    #[sea_orm(string_value = "check")]
+    Check,
+    #[sea_orm(string_value = "other")]
+    Other,
+}
+#[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum, Deserialize)]
+#[sea_orm(rs_type = "String", db_type = "Enum", enum_name = "payment_status")]
+pub enum PaymentStatus {
+    #[sea_orm(string_value = "overdue")]
+    Overdue,
+    #[sea_orm(string_value = "paid")]
+    Paid,
+    #[sea_orm(string_value = "pending")]
+    Pending,
+}
+#[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum, Deserialize)]
 #[sea_orm(rs_type = "String", db_type = "Enum", enum_name = "registered_with")]
 pub enum RegisteredWith {
     #[sea_orm(string_value = "apple")]
@@ -60,4 +110,34 @@ pub enum RegisteredWith {
     Google,
     #[sea_orm(string_value = "native")]
     Native,
+}
+#[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum, Deserialize)]
+#[sea_orm(rs_type = "String", db_type = "Enum", enum_name = "reminder_status")]
+pub enum ReminderStatus {
+    #[sea_orm(string_value = "failed")]
+    Failed,
+    #[sea_orm(string_value = "pending")]
+    Pending,
+    #[sea_orm(string_value = "sent")]
+    Sent,
+}
+#[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum, Deserialize)]
+#[sea_orm(rs_type = "String", db_type = "Enum", enum_name = "reminder_type")]
+pub enum ReminderType {
+    #[sea_orm(string_value = "email")]
+    Email,
+    #[sea_orm(string_value = "notification")]
+    Notification,
+    #[sea_orm(string_value = "other")]
+    Other,
+    #[sea_orm(string_value = "sms")]
+    Sms,
+}
+#[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum, Deserialize)]
+#[sea_orm(rs_type = "String", db_type = "Enum", enum_name = "shared_type")]
+pub enum SharedType {
+    #[sea_orm(string_value = "fixed")]
+    Fixed,
+    #[sea_orm(string_value = "percentage")]
+    Percentage,
 }

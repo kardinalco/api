@@ -1,10 +1,10 @@
+use crate::exceptions::error::Error;
+use crate::services::hash::hash;
 use cuid2::cuid;
 use entity::user;
 use sea_orm::ActiveValue::Set;
 use serde::Deserialize;
 use validator::Validate;
-use crate::exceptions::error::Error;
-use crate::services::hash::hash;
 
 #[derive(Deserialize, Debug, Clone, Validate)]
 pub struct AuthLoginRequest {
@@ -43,7 +43,7 @@ impl AuthRegisterRequest {
             ..Default::default()
         }
     }
-    
+
     pub fn hash_password(self) -> Result<Self, Error> {
         Ok(Self {
             password: hash(&self.password)?,

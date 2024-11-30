@@ -1,6 +1,6 @@
-use actix_web::{HttpResponse, ResponseError};
 use actix_web::body::BoxBody;
 use actix_web::http::StatusCode;
+use actix_web::{HttpResponse, ResponseError};
 use serde::Serialize;
 use serde_json::json;
 
@@ -21,6 +21,9 @@ pub enum AuthenticateError {
 
     #[error("'{0}' third party is not enabled")]
     ThirdPartyNotEnabled(&'static str),
+
+    #[error("{0}")]
+    Unauthorized(String),
 }
 
 impl ResponseError for AuthenticateError {

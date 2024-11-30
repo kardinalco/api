@@ -2,10 +2,23 @@
 
 pub mod prelude;
 
+pub mod credentials;
+pub mod credentials_house;
+pub mod expense;
+pub mod expense_house;
+pub mod expense_payment;
+pub mod expense_reimbursement;
+pub mod expense_reminder;
+pub mod expense_shared;
+pub mod home_insurance;
+pub mod home_insurance_house;
 pub mod house;
 pub mod house_user;
-pub mod password;
 pub mod permission;
+pub mod pet;
+pub mod pet_house;
+pub mod provider;
+pub mod provider_house;
 pub mod role;
 pub mod role_permission;
 pub mod sea_orm_active_enums;

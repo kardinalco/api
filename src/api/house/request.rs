@@ -1,9 +1,9 @@
+use crate::api::house::response::HouseType;
 use cuid2::{cuid, slug};
 use entity::house::ActiveModel;
 use sea_orm::Set;
 use serde::{Deserialize, Serialize};
 use validator::Validate;
-use crate::api::house::response::HouseType;
 
 #[derive(Debug, Deserialize, Validate)]
 pub struct HouseCreateRequest {

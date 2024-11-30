@@ -1,0 +1,8 @@
+[package]
+name = "permission"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+enum-display = {version = "0.1.4"}
+enum-iterator = {version = "2.1.0"}

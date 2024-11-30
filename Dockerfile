@@ -10,14 +10,17 @@ WORKDIR /usr/src/app
 COPY Cargo.toml Cargo.lock ./
 COPY ./entity/Cargo.toml ./entity/Cargo.lock ./entity/
 COPY ./settings/Cargo.toml ./settings/Cargo.lock ./settings/
+COPY ./permissions/Cargo.toml ./permissions/Cargo.lock ./permissions/
 RUN mkdir -p ./src && echo 'fn main() {}' > ./src/main.rs
 RUN mkdir -p ./entity/src && echo '' > ./entity/src/main.rs
 RUN mkdir -p ./settings/src && echo '' > ./settings/src/main.rs
+RUN mkdir -p ./permission/src && echo '' > ./permission/src/main.rs
 RUN cargo build --release
 
 RUN rm -rf ./src
 RUN rm -rf ./entity/src
 RUN rm -rf ./settings/src
+RUN rm -rf ./permission/src
 COPY . .
 
 RUN cargo build --release

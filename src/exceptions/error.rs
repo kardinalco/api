@@ -1,26 +1,26 @@
+use super::auth::AuthenticateError;
+use super::cache::CacheError;
+use super::db::DatabaseError;
+use super::settings::SettingsError;
+use crate::exceptions::auth::AuthenticateError::CannotCreateUserSession;
+use crate::exceptions::entity::EntityError;
+use crate::exceptions::request::RequestError;
 use actix_session::{SessionGetError, SessionInsertError};
-use actix_web::{HttpResponse, Responder, ResponseError};
 use actix_web::body::BoxBody;
 use actix_web::http::StatusCode;
+use actix_web::{HttpResponse, Responder, ResponseError};
 use bb8::RunError;
 use redis::RedisError;
 use sea_orm::DbErr;
 use serde::Serialize;
 use serde_json::json;
-use crate::exceptions::auth::AuthenticateError::CannotCreateUserSession;
-use crate::exceptions::entity::EntityError;
-use crate::exceptions::request::RequestError;
-use super::auth::AuthenticateError;
-use super::cache::CacheError;
-use super::db::DatabaseError;
-use super::settings::SettingsError;
 
 #[derive(Debug, thiserror::Error, Serialize)]
 #[error("...")]
 pub enum Error {
     #[error("{0}")]
     Auth(#[from] AuthenticateError),
-    
+
     #[error("Internal Server Error: {0}")]
     InternalServer(String),
 
@@ -35,15 +35,15 @@ pub enum Error {
 
     #[error("{0}")]
     Settings(#[from] SettingsError),
-    
+
     #[error("{0}")]
     Entity(#[from] EntityError),
 
     #[error("Hash error !")]
     Hash,
-    
+
     #[error("{0}")]
-    Request(RequestError)
+    Request(RequestError),
 }
 
 impl ResponseError for Error {
@@ -64,7 +64,7 @@ impl ResponseError for Error {
             Error::Database(e) => e.error_response(),
             Error::Entity(e) => e.error_response(),
             Error::Request(e) => e.error_response(),
-            _ => unimplemented!()
+            _ => unimplemented!(),
         }
     }
 }
@@ -77,7 +77,7 @@ impl Responder for Error {
             Error::Auth(e) => e.error_response(),
             Error::InternalServer(x) => Error::InternalServer(x).error_response(),
             Error::Parse(x) => Error::Parse(x).error_response(),
-            _ => unimplemented!()
+            _ => unimplemented!(),
         }
     }
 }

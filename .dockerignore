@@ -1,6 +1,7 @@
 target/
 migration/target
 settings/target
+permission/target
 .github
 .dockerignore
 .env

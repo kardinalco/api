@@ -1,5 +1,9 @@
-pub mod house;
-pub mod user;
 pub mod auth;
+pub mod credentials;
 pub mod expense;
+pub mod house;
 pub mod permission;
+pub mod pet;
+pub mod provider;
+pub mod settings;
+pub mod user;

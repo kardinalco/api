@@ -8,3 +8,4 @@ log/
 migration/target
 entity/target
 settings/target
+permission/target

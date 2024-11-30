@@ -1,64 +1,45 @@
-use config::{Config, Environment};
-use serde::{Serialize, Deserialize};
+use crate::services::cache::CachedSettings;
+use redis::{ErrorKind, FromRedisValue};
+use serde::de::DeserializeOwned;
+use serde::{Deserialize, Serialize};
+use settings::global::Global;
+use settings::google::Google;
+use settings::cache::Cache;
 
-use crate::exceptions::settings::SettingsError;
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct Settings<T>(T);
 
-#[derive(Serialize, Deserialize, Clone, Default)]
-pub struct Database {
-    pub url: String
-}
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct SecretSettings<T>(T);
 
-#[derive(Serialize, Deserialize, Clone, Default)]
-pub struct Redis {
-    pub url: String
-}
-
-#[derive(Serialize, Deserialize, Clone, Default)]
-pub struct Log {
-    pub level: LogLevel
-}
-
-#[derive(Serialize, Deserialize, Clone, Default)]
-pub enum LogLevel {
-    #[default]
-    Debug,
-    Info,
-    Warning,
-    Error
-}
-
-impl LogLevel {
-    pub fn as_str(&self) -> &str {
-        match self {
-            LogLevel::Debug => "debug",
-            LogLevel::Info => "info",
-            LogLevel::Warning => "warning",
-            LogLevel::Error => "error"
-        }
+impl<T: DeserializeOwned> FromRedisValue for Settings<T> {
+    fn from_redis_value(v: &redis::Value) -> redis::RedisResult<Self> {
+        let s: String = redis::FromRedisValue::from_redis_value(v)?;
+        serde_json::from_str(&s)
+            .map_err(|_| redis::RedisError::from((ErrorKind::TypeError, "Cannot parse value")))
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Default)]
-pub struct Keys {
-    pub session: String,
+impl<T> Settings<T> {
+    pub fn into_inner(self) -> T {
+        self.0
+    }
 }
 
-#[derive(Serialize, Deserialize, Clone, Default)]
-pub struct Api {
-    pub port: i32,
+impl CachedSettings for Settings<Google> {
+    fn get_key<'a>() -> &'a str {
+        "google"
+    }
 }
 
-#[derive(Serialize, Deserialize, Clone, Default)]
-pub struct Settings {
-    pub database: Database,
-    pub log: Log,
-    pub redis: Redis,
-    pub keys: Keys,
-    pub api: Api
+impl CachedSettings for Settings<Global> {
+    fn get_key<'a>() -> &'a str {
+        "global"
+    }
 }
 
-impl Settings {
-    pub fn new() -> Result<Self, SettingsError> {
-        Ok(Config::builder().add_source(Environment::default().separator("__")).build()?.try_deserialize()?)
+impl CachedSettings for Settings<Cache> {
+    fn get_key<'a>() -> &'a str {
+        "cache"
     }
 }

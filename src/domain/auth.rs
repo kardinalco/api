@@ -1,3 +1,11 @@
+use crate::api::auth::request::{AuthLoginRequest, AuthRegisterRequest};
+use crate::domain::role::RoleDomain;
+use crate::exceptions::auth::AuthenticateError;
+use crate::exceptions::error::Error;
+use crate::extractors::auth_session::AuthSession;
+use crate::services::cache::CachedSettings;
+use crate::services::google::GoogleService;
+use crate::utils::settings::Settings;
 use actix_session::Session;
 use bb8::Pool;
 use bb8_redis::RedisConnectionManager;
@@ -5,16 +13,10 @@ use cuid2::cuid;
 use entity::prelude::User;
 use entity::sea_orm_active_enums::RegisteredWith;
 use entity::user::Column::{DeletedBy, Email};
-use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
 use sea_orm::ActiveValue::Set;
+use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
+use settings::google::Google;
 use tracing::instrument;
-use crate::api::auth::request::{AuthLoginRequest, AuthRegisterRequest};
-use crate::domain::settings::google::GoogleSettings;
-use crate::exceptions::auth::AuthenticateError;
-use crate::exceptions::error::Error;
-use crate::extractors::auth_session::AuthSession;
-use crate::services::cache::CachedSettings;
-use crate::services::google::GoogleService;
 
 pub struct AuthDomain;
 
@@ -26,7 +28,8 @@ impl AuthDomain {
             .filter(entity::user::Column::RegisteredWith.eq(RegisteredWith::Native))
             .filter(DeletedBy.is_null())
             .one(&db)
-            .await?.ok_or(AuthenticateError::WrongCredentials)?;
+            .await?
+            .ok_or(AuthenticateError::WrongCredentials)?;
         Self::insert_session(&session, user.clone(), body.password)?;
         Ok(user)
     }
@@ -39,7 +42,7 @@ impl AuthDomain {
         Ok(())
     }
 
-    pub async fn register(body: AuthRegisterRequest, db: DatabaseConnection) -> Result<(), Error> {
+    pub async fn register(body: AuthRegisterRequest, db: DatabaseConnection, cache: Pool<RedisConnectionManager>) -> Result<(), Error> {
         let user = User::find()
             .filter(Email.eq(body.email.clone()))
             .one(&db)
@@ -47,7 +50,8 @@ impl AuthDomain {
         if let Some(_) = user {
             return Err(AuthenticateError::UserAlreadyRegistered.into());
         }
-        body.hash_password()?.into_model().insert(&db).await?;
+        let user = body.hash_password()?.into_model().insert(&db).await?;
+        RoleDomain::add_user_to_default_role(&db, &cache, &user).await?;
         Ok(())
     }
 
@@ -59,7 +63,7 @@ impl AuthDomain {
 
     #[instrument(skip(db, cache))]
     pub async fn build_google_auth_url(db: &DatabaseConnection, cache: &Pool<RedisConnectionManager>) -> Result<String, Error> {
-        let google_auth = GoogleSettings::get(cache, db).await?.into_inner();
+        let google_auth = Settings::<Google>::new(cache, db).await?.into_inner();
         if !google_auth.is_enabled() {
             return Err(AuthenticateError::ThirdPartyNotEnabled("Google Auth").into());
         }
@@ -68,7 +72,7 @@ impl AuthDomain {
 
     #[instrument(skip(db, cache, session))]
     pub async fn login_with_google(db: &DatabaseConnection, cache: &Pool<RedisConnectionManager>, session: &Session, code: &str) -> Result<entity::user::Model, Error> {
-        let google_auth = GoogleSettings::get(cache, db).await?.into_inner();
+        let google_auth = Settings::<Google>::new(cache, db).await?.into_inner();
         if !google_auth.is_enabled() {
             return Err(AuthenticateError::ThirdPartyNotEnabled("Google Auth").into());
         }
@@ -77,7 +81,7 @@ impl AuthDomain {
         let user = if let Some(user) = User::find().filter(Email.eq(info.clone().email)).one(db).await? {
             user
         } else {
-            entity::user::ActiveModel {
+            let user = entity::user::ActiveModel {
                 id: Set(cuid()),
                 registered_with: Set(RegisteredWith::Google),
                 email: Set(info.email),
@@ -87,7 +91,9 @@ impl AuthDomain {
                 first_name: Set(info.given_name),
                 last_name: Set(info.family_name.unwrap_or(".....".to_string())),
                 ..Default::default()
-            }.insert(db).await?
+            }.insert(db).await?;
+            RoleDomain::add_user_to_default_role(db, cache, &user).await?;
+            user
         };
         session.insert("user_id", user.id.clone())?;
         Ok(user)

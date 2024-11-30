@@ -5,7 +5,7 @@ use serde::Serialize;
 #[error("...")]
 pub enum SettingsError {
     #[error("Missing configuration {0}")]
-    MissingConfiguration(String)
+    MissingConfiguration(String),
 }
 
 impl From<ConfigError> for SettingsError {
@@ -13,7 +13,7 @@ impl From<ConfigError> for SettingsError {
         match value {
             ConfigError::NotFound(a) => Self::MissingConfiguration(a),
             ConfigError::Message(a) => Self::MissingConfiguration(a),
-            _ => Self::MissingConfiguration(String::from("TODO"))
+            _ => Self::MissingConfiguration(String::from("TODO")),
         }
     }
 }

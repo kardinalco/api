@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 entity = { path = "entity" }
 settings = { path = "settings" }
+permission = {path = "permission"}
 
 actix = {version = "0.13.5"}
 actix-web = {version = "4.9.0", features = []}
@@ -40,3 +41,5 @@ cuid2 = "0.1.3"
 anyhow = { version = "1.0.93" }
 casbin = { version = "2.5.0"}
 async-trait = "0.1"
+
+futures-util = "0.3.31"

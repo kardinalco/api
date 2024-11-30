@@ -1,5 +1,3 @@
-use actix_web::web::{delete, get, post, put, scope, Path, ServiceConfig};
-use tracing::instrument;
 use crate::api::house::request::{HouseCreateRequest, HouseInviteUserRequest, HouseRevokeUserRequest, HouseUpdateRequest};
 use crate::api::house::response::{HouseCreatedResponse, HouseDeleteResponse, HouseInviteResponse, HouseListResponse, HouseResponse, HouseRevokeResponse};
 use crate::api::user::response::UserListResponse;
@@ -9,25 +7,31 @@ use crate::extractors::auth_session::AuthSession;
 use crate::extractors::db::DbReq;
 use crate::extractors::dto::Dto;
 use crate::utils::route::Route;
+use actix_web::web::{delete, get, post, put, scope, Path, ServiceConfig};
+use permission::house::HousePermission;
+use permission::resource::Resource;
+use tracing::instrument;
 
 pub struct HouseRoute;
 
 impl HouseRoute {
-
-    #[instrument]
-    pub async fn get_house(_: AuthSession, db: DbReq, path: Path<String>) -> Result<HouseResponse, Error> {
+    #[instrument(skip(session))]
+    pub async fn get_house(session: AuthSession, db: DbReq, path: Path<String>) -> Result<HouseResponse, Error> {
+        session.enforce(Resource::House(HousePermission::ReadSelf)).await?;
         let house = HouseDomain::get_active_house_with_users(&path.into_inner(), &db.into_inner()).await?;
         Ok(HouseResponse::new(house.0, Some(house.1)))
     }
 
     #[instrument(skip(session))]
-    pub async fn create_house(session: AuthSession, db: DbReq, body: Dto<HouseCreateRequest>, ) -> Result<HouseCreatedResponse, Error> {
-        let created_house = HouseDomain::create_house(session, body.into_inner(), db.into_inner()).await?;
+    pub async fn create_house(session: AuthSession, db: DbReq, body: Dto<HouseCreateRequest>) -> Result<HouseCreatedResponse, Error> {
+        session.enforce(Resource::House(HousePermission::Create)).await?;
+        let created_house =HouseDomain::create_house(session, body.into_inner(), db.into_inner()).await?;
         Ok(HouseCreatedResponse::new(created_house))
     }
 
     #[instrument(skip(session, db))]
     pub async fn list_house(session: AuthSession, db: DbReq) -> Result<HouseListResponse, Error> {
+        session.enforce(Resource::House(HousePermission::List)).await?;
         let houses = HouseDomain::list_house(session, db.into_inner()).await?;
         Ok(HouseListResponse::new(houses))
     }
@@ -39,7 +43,7 @@ impl HouseRoute {
     }
 
     #[instrument(skip(session, db))]
-    pub async fn invite_users(session: AuthSession, db: DbReq, path: Path<String>, body: Dto<HouseInviteUserRequest>) -> Result<HouseInviteResponse, Error> {
+    pub async fn invite_users(session: AuthSession, db: DbReq, path: Path<String>, body: Dto<HouseInviteUserRequest>,) -> Result<HouseInviteResponse, Error> {
         HouseDomain::invite_users(session, db.into_inner(), &path.into_inner(), &body.into_inner().users).await?;
         Ok(HouseInviteResponse {})
     }
@@ -97,7 +101,7 @@ impl Route for HouseRoute {
                 .route("{house_id}/users/accept", delete().to(Self::accept_invitation))
                 .route("{house_id}/users/decline", delete().to(Self::decline_invitation))
                 .route("{house_id}/expenses", delete().to(Self::list_expense))
-                .route("{house_id}/credentials", delete().to(Self::list_credentials))
+                .route("{house_id}/credentials", delete().to(Self::list_credentials)),
         );
     }
 }

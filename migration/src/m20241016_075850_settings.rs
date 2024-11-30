@@ -1,6 +1,8 @@
 use cuid2::cuid;
 use sea_orm_migration::{async_trait, prelude::*, schema::*};
 use serde_json::json;
+use settings::cache::Cache;
+use settings::global::Global;
 use settings::google::Google;
 use settings::mail::Mail;
 use crate::m20241016_075756_users::User;
@@ -25,15 +27,17 @@ impl MigrationTrait for Migration {
                 .col(string_len_null(Settings::UpdatedBy, 24))
                 .col(date_time_null(Settings::DeletedAt))
                 .col(string_len_null(Settings::DeletedBy, 24))
-                .foreign_key(ForeignKey::create().name("fk_created_by").from(Settings::Table, Settings::CreatedBy).to(User::Table, User::Id).on_delete(ForeignKeyAction::SetNull).on_update(ForeignKeyAction::Cascade))
-                .foreign_key(ForeignKey::create().name("fk_updated_by").from(Settings::Table, Settings::UpdatedBy).to(User::Table, User::Id).on_delete(ForeignKeyAction::SetNull).on_update(ForeignKeyAction::Cascade))
-                .foreign_key(ForeignKey::create().name("fk_deleted_by").from(Settings::Table, Settings::DeletedBy).to(User::Table, User::Id).on_delete(ForeignKeyAction::SetNull).on_update(ForeignKeyAction::Cascade))
+                .foreign_key(ForeignKey::create().name("fk_settings_created_by").from(Settings::Table, Settings::CreatedBy).to(User::Table, User::Id).on_delete(ForeignKeyAction::SetNull).on_update(ForeignKeyAction::Cascade))
+                .foreign_key(ForeignKey::create().name("fk_settings_updated_by").from(Settings::Table, Settings::UpdatedBy).to(User::Table, User::Id).on_delete(ForeignKeyAction::SetNull).on_update(ForeignKeyAction::Cascade))
+                .foreign_key(ForeignKey::create().name("fk_settings_deleted_by").from(Settings::Table, Settings::DeletedBy).to(User::Table, User::Id).on_delete(ForeignKeyAction::SetNull).on_update(ForeignKeyAction::Cascade))
                 .to_owned()
         ).await?;
         
         let values = vec![
             ("google", "Google settings (credentials, features flipping...)", json!(Google::default())), 
-            ("mail", "Mail settings (smtp, from address...)", json!(Mail::default()))
+            ("mail", "Mail settings (smtp, from address...)", json!(Mail::default())),
+            ("global", "Global settings (pagination, default language...)", json!(Global::default())),
+            ("cache", "Cache settings (ttl, refresh...)", json!(Cache::default())),
         ];
 
         let mut google =  Query::insert()

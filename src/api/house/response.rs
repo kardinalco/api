@@ -1,9 +1,9 @@
-use actix_web::{HttpRequest, HttpResponse, Responder};
+use crate::api::user::response::User;
 use actix_web::body::BoxBody;
 use actix_web::http::StatusCode;
+use actix_web::{HttpRequest, HttpResponse, Responder};
 use entity::sea_orm_active_enums::HouseLocationType;
 use serde::{Deserialize, Serialize};
-use crate::api::user::response::User;
 
 #[derive(Debug, Serialize)]
 pub struct HouseCreatedResponse {
@@ -24,8 +24,7 @@ impl Responder for HouseCreatedResponse {
     type Body = BoxBody;
 
     fn respond_to(self, _: &HttpRequest) -> HttpResponse<Self::Body> {
-        HttpResponse::build(StatusCode::CREATED)
-            .json(self)
+        HttpResponse::build(StatusCode::CREATED).json(self)
     }
 }
 
@@ -39,7 +38,10 @@ impl HouseListResponse {
     pub fn new(houses: Vec<entity::house::Model>) -> Self {
         Self {
             count: houses.len(),
-            houses: houses.into_iter().map(|house| House::from_model(house, None)).collect(),
+            houses: houses
+                .into_iter()
+                .map(|house| House::from_model(house, None))
+                .collect(),
         }
     }
 }
@@ -104,7 +106,10 @@ impl From<HouseLocationType> for HouseType {
 }
 
 impl House {
-    pub fn from_model(model: entity::house::Model, users: Option<Vec<entity::user::Model>>) -> Self {
+    pub fn from_model(
+        model: entity::house::Model,
+        users: Option<Vec<entity::user::Model>>,
+    ) -> Self {
         Self {
             id: model.id,
             name: model.name,
@@ -125,7 +130,12 @@ impl House {
             updated_by: model.updated_by,
             updated_at: model.updated_at,
             created_at: model.created_at,
-            users: users.map(|users| users.into_iter().map(|user| User::from_model(user)).collect()),
+            users: users.map(|users| {
+                users
+                    .into_iter()
+                    .map(|user| User::from_model(user))
+                    .collect()
+            }),
         }
     }
 }

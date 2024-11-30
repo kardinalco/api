@@ -7,6 +7,7 @@ RUN apt-get update -y && \
 RUN cargo install sea-orm-cli
 
 COPY ./migration ./migration
+COPY ./permission ./permission
 COPY ./settings ./settings
 
 RUN cargo build --manifest-path ./migration/Cargo.toml

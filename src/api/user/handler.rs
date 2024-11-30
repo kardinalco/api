@@ -1,6 +1,3 @@
-use actix_web::Responder;
-use actix_web::web::{get, post, put, scope, delete, Path};
-use tracing::instrument;
 use crate::api::user::request::UserUpdateRequest;
 use crate::api::user::response::{UserListResponse, UserResponse};
 use crate::domain::user::UserDomain;
@@ -9,12 +6,14 @@ use crate::extractors::auth_session::AuthSession;
 use crate::extractors::db::DbReq;
 use crate::extractors::dto::Dto;
 use crate::utils::route::Route;
+use actix_web::web::{delete, get, post, put, scope, Path};
+use actix_web::Responder;
+use tracing::instrument;
 
 pub struct UserRoute;
 
 impl UserRoute {
-
-    #[instrument(skip(session, db))] 
+    #[instrument(skip(session, db))]
     pub async fn get_user(session: AuthSession, db: DbReq, user_id: Path<String>) -> Result<UserResponse, Error> {
         let user = if session.user.id.eq_ignore_ascii_case(user_id.as_str()) {
             UserDomain::find_active_user_by_id(&user_id.into_inner(), &db.into_inner()).await?
@@ -28,10 +27,20 @@ impl UserRoute {
     #[instrument(skip(session, db))]
     pub async fn update_user(session: AuthSession, db: DbReq, user_id: Path<String>, body: Dto<UserUpdateRequest>) -> Result<UserResponse, Error> {
         let user = if session.user.id.eq_ignore_ascii_case(user_id.as_str()) {
-            UserDomain::update(session.user.id, user_id.into_inner(), &db.into_inner(), body.into_inner()).await?
+            UserDomain::update(
+                session.user.id,
+                user_id.into_inner(),
+                &db.into_inner(),
+                body.into_inner(),
+            ).await?
         } else {
             //TODO check user permission !
-            UserDomain::update(session.user.id, user_id.into_inner(), &db.into_inner(), body.into_inner()).await?
+            UserDomain::update(
+                session.user.id,
+                user_id.into_inner(),
+                &db.into_inner(),
+                body.into_inner(),
+            ).await?
         };
         Ok(UserResponse::new(user))
     }
@@ -61,7 +70,6 @@ impl UserRoute {
     pub async fn delete_user_profile_picture() -> impl Responder {
         ""
     }
-    
 }
 
 impl Route for UserRoute {
@@ -74,7 +82,7 @@ impl Route for UserRoute {
                 .route("{id}", get().to(UserRoute::get_user))
                 .route("{id}", delete().to(UserRoute::delete_user))
                 .route("{id}/upload-picture", post().to(UserRoute::update_user_profile_picture))
-                .route("{id}/upload-picture", delete().to(UserRoute::delete_user_profile_picture))
+                .route("{id}/upload-picture", delete().to(UserRoute::delete_user_profile_picture)),
         );
     }
 }

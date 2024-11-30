@@ -1,18 +1,33 @@
 use std::future::Future;
 use std::pin::Pin;
+use std::sync::Arc;
 use entity::prelude::User;
 use actix_session::Session;
 use actix_web::{FromRequest, HttpRequest};
 use actix_web::dev::Payload;
+use permission::resource::Resource;
 use sea_orm::EntityTrait;
 use tracing::instrument;
 use crate::exceptions::auth::AuthenticateError::NeedSession;
 use crate::exceptions::error::Error;
+use crate::extractors::cache::Cache;
 use crate::extractors::db::DbReq;
+use crate::services::permission::Permission;
 
 pub struct AuthSession {
     pub user: entity::user::Model,
     pub session: Session,
+    pub permission: Permission
+}
+
+impl AuthSession {
+    pub async fn enforce(&self, resource: Resource) -> Result<(), Error> {
+        self.permission.enforce((&self.user, &resource.get_resource(), &resource.get_action())).await
+    }
+    
+    pub async fn enforce_str(&self, (obj, action): (&str, &str)) -> Result<(), Error> {
+        self.permission.enforce((&self.user, obj, action)).await
+    }
 }
 
 impl FromRequest for AuthSession {
@@ -24,12 +39,14 @@ impl FromRequest for AuthSession {
         let request = req.clone(); 
         Box::pin(async move {
             let session = Session::extract(&request).await?;
+            let cache = Cache::extract(&request).await?;
             let db = DbReq::extract(&request).await?;
             let user_id = session.get::<String>("user_id")?.ok_or(Error::Auth(NeedSession))?;
-            let user = User::find_by_id(user_id).one(&db.0).await
+            let db = db.into_inner();
+            let user = User::find_by_id(user_id).one(&db).await
                 .map_err(|_| Error::Auth(NeedSession))?
                 .ok_or(Error::Auth(NeedSession))?;
-            Ok(AuthSession { user, session })
+            Ok(AuthSession { user, session, permission: Permission::new(Arc::new(db), Arc::new(cache.into_inner())) })
         })
     }
 }

@@ -1,5 +1,5 @@
 use actix_web::http::StatusCode;
-use actix_web::{ResponseError};
+use actix_web::ResponseError;
 use serde::Serialize;
 use serde_json::json;
 use thiserror::Error;
@@ -9,7 +9,7 @@ pub enum RequestError {
     #[error("Google invalid state")]
     GoogleInvalidState,
     #[error("{0}")]
-    Internal(String)
+    Internal(String),
 }
 
 impl ResponseError for RequestError {
@@ -19,12 +19,11 @@ impl ResponseError for RequestError {
             RequestError::GoogleInvalidState => StatusCode::BAD_REQUEST,
         }
     }
-    
+
     fn error_response(&self) -> actix_web::HttpResponse {
-        actix_web::HttpResponse::build(self.status_code())
-            .json(json!({
-                "message": self.to_string()
-            }))
+        actix_web::HttpResponse::build(self.status_code()).json(json!({
+            "message": self.to_string()
+        }))
     }
 }
 

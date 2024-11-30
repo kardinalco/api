@@ -21,7 +21,7 @@ impl ResponseError for EntityError {
             EntityError::NoPermission(_) => actix_web::http::StatusCode::FORBIDDEN,
         }
     }
-    
+
     fn error_response(&self) -> actix_web::HttpResponse {
         actix_web::HttpResponse::build(self.status_code()).json(json!({
             "message": self.to_string(),

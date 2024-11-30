@@ -35,11 +35,12 @@ impl MigrationTrait for Migration {
                     .col(string_len_null(User::UpdatedBy, 24))
                     .col(date_time_null(User::DeletedAt))
                     .col(string_len_null(User::DeletedBy, 24))
-                    .foreign_key(ForeignKey::create().name("fk_created_by_user_id").from(User::Table, User::CreatedBy).to(User::Table, User::Id).on_delete(ForeignKeyAction::SetNull).on_update(ForeignKeyAction::Cascade))
-                    .foreign_key(ForeignKey::create().name("fk_updated_by_user_id").from(User::Table, User::UpdatedBy).to(User::Table, User::Id).on_delete(ForeignKeyAction::SetNull).on_update(ForeignKeyAction::Cascade))
-                    .foreign_key(ForeignKey::create().name("fk_deleted_by_user_id").from(User::Table, User::DeletedBy).to(User::Table, User::Id).on_delete(ForeignKeyAction::SetNull).on_update(ForeignKeyAction::Cascade))
+                    .foreign_key(ForeignKey::create().name("fk_user_created_by_user_id").from(User::Table, User::CreatedBy).to(User::Table, User::Id).on_delete(ForeignKeyAction::SetNull).on_update(ForeignKeyAction::Cascade))
+                    .foreign_key(ForeignKey::create().name("fk_user_updated_by_user_id").from(User::Table, User::UpdatedBy).to(User::Table, User::Id).on_delete(ForeignKeyAction::SetNull).on_update(ForeignKeyAction::Cascade))
+                    .foreign_key(ForeignKey::create().name("fk_user_deleted_by_user_id").from(User::Table, User::DeletedBy).to(User::Table, User::Id).on_delete(ForeignKeyAction::SetNull).on_update(ForeignKeyAction::Cascade))
                     .to_owned()
             ).await?;
+        manager.create_index(Index::create().table(User::Table).name("idx_user_email").col(User::Email).unique().to_owned()).await?;
         Ok(())
     }
 

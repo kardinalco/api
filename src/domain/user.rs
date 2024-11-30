@@ -1,27 +1,32 @@
-use entity::user::{Model, Entity};
-use sea_orm::{ActiveModelTrait, DatabaseConnection, EntityTrait, IntoActiveModel, Set};
 use crate::api::user::request::UserUpdateRequest;
 use crate::domain::house::HouseDomain;
 use crate::exceptions::entity::EntityError;
 use crate::exceptions::error::Error;
 use crate::extractors::auth_session::AuthSession;
+use entity::user::{Entity, Model};
+use sea_orm::{ActiveModelTrait, DatabaseConnection, EntityTrait, IntoActiveModel, Set};
 
 pub struct UserDomain;
 
 impl UserDomain {
-    
-    pub async fn list_user(session: AuthSession, db:  DatabaseConnection) -> Result<(), Error> {
+    pub async fn list_user(session: AuthSession, db: DatabaseConnection) -> Result<(), Error> {
         let _a = HouseDomain::list_house(session, db).await;
         Ok(())
     }
-    
-    pub async fn find_active_user_by_id(user_id: &String, db: &DatabaseConnection) -> Result<Model, Error> {
+
+    pub async fn find_active_user_by_id(
+        user_id: &String,
+        db: &DatabaseConnection,
+    ) -> Result<Model, Error> {
         Entity::find_by_id(user_id)
             .one(db)
             .await?
-            .ok_or(Error::Entity(EntityError::NotFound("User", user_id.to_owned())))
+            .ok_or(Error::Entity(EntityError::NotFound(
+                "User",
+                user_id.to_owned(),
+            )))
     }
-    
+
     pub async fn update(updated_by: String, user_id: String, db: &DatabaseConnection, body: UserUpdateRequest) -> Result<Model, Error> {
         let user = Entity::find_by_id(user_id.clone())
             .one(db)
@@ -40,5 +45,4 @@ impl UserDomain {
         model.updated_by = Set(Some(updated_by));
         Ok(model.update(db).await?)
     }
-    
 }

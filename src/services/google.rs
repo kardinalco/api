@@ -1,6 +1,6 @@
+use crate::exceptions::request::RequestError;
 use serde::Deserialize;
 use settings::google::Google;
-use crate::exceptions::request::RequestError;
 
 pub struct GoogleService;
 
@@ -25,7 +25,13 @@ pub struct GoogleUserInfoResponse {
 
 impl GoogleService {
     pub async fn login(google: &Google, code: &str) -> Result<GoogleTokenResponse, RequestError> {
-        let params = [("code", code), ("client_id", google.get_client_id()), ("client_secret", google.get_client_secret()), ("redirect_uri", google.get_redirect_uri()), ("grant_type", google.get_grant_type())];
+        let params = [
+            ("code", code),
+            ("client_id", google.get_client_id()),
+            ("client_secret", google.get_client_secret()),
+            ("redirect_uri", google.get_redirect_uri()),
+            ("grant_type", google.get_grant_type()),
+        ];
         let client = reqwest::Client::new();
         let result = client
             .post(google.get_url().get_token_url())
@@ -35,10 +41,10 @@ impl GoogleService {
         match result.status() {
             reqwest::StatusCode::OK => Ok(result.json::<GoogleTokenResponse>().await?),
             reqwest::StatusCode::BAD_REQUEST => Err(RequestError::GoogleInvalidState),
-            _ => Err(RequestError::Internal(result.text().await?))
+            _ => Err(RequestError::Internal(result.text().await?)),
         }
     }
-    
+
     pub async fn get_user(google: &Google, access_token: &str) -> Result<GoogleUserInfoResponse, RequestError> {
         let client = reqwest::Client::new();
         let result = client
@@ -48,8 +54,7 @@ impl GoogleService {
             .await?;
         match result.status() {
             reqwest::StatusCode::OK => Ok(result.json::<GoogleUserInfoResponse>().await?),
-            _ => Err(RequestError::Internal(result.text().await?))
+            _ => Err(RequestError::Internal(result.text().await?)),
         }
     }
-    
 }
