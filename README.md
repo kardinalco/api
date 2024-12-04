@@ -14,7 +14,6 @@ Routes
 - [ ] **POST** `/api/v1/user/:id/upload-picture` - Update user profile picture by id
 - [ ] **DELETE** `/api/v1/user/:id/upload-picture` - Delete user profile picture by id
 - [ ] **DELETE** `/api/v1/user/:id` - Delete user by id
-- [ ] **GET** `/api/v1/user/:id/house` - Get house by user id
 
 ### Authentification
 

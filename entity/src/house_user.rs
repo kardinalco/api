@@ -11,8 +11,13 @@ pub struct Model {
     pub user_id: String,
     #[sea_orm(primary_key, auto_increment = false)]
     pub house_id: String,
+    pub invited_by: String,
     pub invited_at: DateTime,
+    pub revoked_by: Option<String>,
+    pub revoked_at: Option<DateTime>,
+    pub accepted_by: Option<String>,
     pub accepted_at: Option<DateTime>,
+    pub declined_by: Option<String>,
     pub declined_at: Option<DateTime>,
     pub status: HouseUserStatus,
 }

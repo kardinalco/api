@@ -4,3 +4,6 @@ pub mod provider;
 pub mod resource;
 pub mod role;
 pub mod user;
+pub mod expense;
+pub mod credential;
+pub mod permission;

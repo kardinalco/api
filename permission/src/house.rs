@@ -17,6 +17,8 @@ pub enum HousePermission {
     InviteSelf,
     Revoke,
     RevokeSelf,
+    ListInvitationSelf,
+    ListInvitation,
     AcceptInvitation,
     AcceptInvitationSelf,
     DeclineInvitation,

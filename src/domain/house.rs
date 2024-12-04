@@ -6,15 +6,19 @@ use entity::house::Model;
 use entity::prelude::*;
 use entity::sea_orm_active_enums::HouseUserStatus;
 use entity::{house_user, user};
-use sea_orm::sea_query::Alias;
 use sea_orm::ActiveValue::Set;
-use sea_orm::JoinType::LeftJoin;
-use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, IntoActiveModel, QueryFilter, QuerySelect, QueryTrait, RelationTrait};
+use sea_orm::{ActiveModelTrait, ColumnTrait, Condition, DatabaseConnection, EntityTrait, IntoActiveModel, JoinType, QueryFilter, QuerySelect, QueryTrait, RelationTrait};
+use permission::house::HousePermission;
+use permission::resource::Resource;
+use crate::extractors::pagination::Pagination;
+use crate::services::entity::WithPagination;
 
 pub struct HouseDomain;
 
+type HouseWithUsers = (Model, Vec<user::Model>);
+
 impl HouseDomain {
-    pub async fn find_active_house_by_id(house_id: &String, db: &DatabaseConnection) -> Result<Model, Error> {
+    pub async fn find_active_house_by_id(house_id: &str, db: &DatabaseConnection) -> Result<Model, Error> {
         House::find_by_id(house_id)
             .filter(entity::house::Column::DeletedAt.is_null())
             .one(db)
@@ -22,12 +26,10 @@ impl HouseDomain {
             .ok_or(Error::Entity(EntityError::NotFound("House", house_id.to_owned())))
     }
 
-    pub async fn get_active_house_with_users(house_id: &String, db: &DatabaseConnection) -> Result<(Model, Vec<user::Model>), Error> {
-        let house_with_users = House::find_by_id(house_id.clone())
+    pub async fn get_active_house_with_users(db: &DatabaseConnection, (house_id, pagination): (&str, Pagination)) -> Result<HouseWithUsers, Error> {
+        let house_with_users = House::find_by_id(house_id)
             .filter(entity::house::Column::DeletedAt.is_null())
-            .join_as(LeftJoin, entity::house::Relation::User3.def(), Alias::new("created_by_user"))
-            .join_as(LeftJoin, entity::house::Relation::User2.def(), Alias::new("updated_by_user"))
-            .join_as(LeftJoin, entity::house::Relation::User1.def(), Alias::new("deleted_by_user"))
+            .with_pagination(pagination)
             .find_with_related(user::Entity)
             .all(db)
             .await?;
@@ -44,20 +46,16 @@ impl HouseDomain {
         Ok(house.insert(&db).await?)
     }
 
-    pub async fn list_house(session: AuthSession, db: DatabaseConnection) -> Result<Vec<Model>, Error> {
-        Ok(House::find()
-            .filter(entity::house::Column::CreatedBy.eq(&session.user.id))
+    pub async fn list_house(session: AuthSession, db: DatabaseConnection, pag: Pagination) -> Result<Vec<Model>, Error> {
+        let house = entity::house::Entity::find()
+            .with_pagination(pag)
+            .join(JoinType::LeftJoin, entity::house::Relation::HouseUser.def())
             .filter(entity::house::Column::DeletedAt.is_null())
-            .filter(user::Column::Id.in_subquery(
-                house_user::Entity::find()
-                    .select_only()
-                    .column(house_user::Column::HouseId)
-                    .filter(house_user::Column::UserId.eq(&session.user.id))
-                    .into_query(),
-            ))
-            .all(&db)
-            .await
-            .unwrap_or(vec![]))
+            .filter(Condition::any()
+                .add(entity::house::Column::CreatedBy.eq(&session.user.id))
+                .add(house_user::Column::UserId.eq(&session.user.id)))
+            .all(&db).await?;
+        Ok(house)
     }
 
     pub async fn invite_users(_: AuthSession, db: DatabaseConnection, house_id: &String, users: &Vec<String>) -> Result<(), Error> {
@@ -110,9 +108,67 @@ impl HouseDomain {
             .await?;
         Ok(())
     }
+    
+    pub async fn accept_invitation(session: AuthSession, db: DatabaseConnection, house_id: &str) -> Result<(), Error> {
+        Self::update_invitation(session, db, (house_id, HousePermission::AcceptInvitation, HouseUserStatus::Accepted)).await
+    }
+    
+    pub async fn decline_invitation(session: AuthSession, db: DatabaseConnection, house_id: &str) -> Result<(), Error>{
+        Self::update_invitation(session, db, (house_id, HousePermission::DeclineInvitation, HouseUserStatus::Declined)).await
+    }
+    
+    async fn update_invitation(session: AuthSession, db: DatabaseConnection, (house_id, perm, status): (&str, HousePermission, HouseUserStatus)) -> Result<(), Error> {
+        let house_user = house_user::Entity::find()
+            .filter(house_user::Column::HouseId.eq(house_id).and(house_user::Column::UserId.eq(&session.user.id)))
+            .one(&db)
+            .await?
+            .ok_or(Error::Entity(EntityError::NotFound("HouseUser", house_id.to_owned())))?;
+        match house_user.status == HouseUserStatus::Pending {
+            true => (),
+            false => session.enforce(Resource::House(perm)).await?
+        }
+        let mut model = house_user.into_active_model();
+        model.accepted_at = Set(Some(chrono::Utc::now().naive_utc()));
+        model.status = Set(status.into());
+        model.update(&db).await?;
+        Ok(())
+    }
+    
+    pub async fn list_users(session: AuthSession, db: DatabaseConnection, house_id: &str) -> Result<Vec<(house_user::Model, user::Model)>, Error> {
+        let house = Self::_get_house(&session, house_id, &session.user.id, HousePermission::ListInvitation).await?;
+        Ok(house_user::Entity::find()
+            .find_also_related(user::Entity)
+            .filter(house_user::Column::HouseId.eq(house_id))
+            .all(&db)
+            .await?
+            .into_iter().filter_map(|(invitation, user)| {
+            match user {
+                Some(user) => Some((invitation, user)),
+                None => None
+            }
+        }).collect())
+    }
+    
+    async fn _get_house(session: &AuthSession, house_id: &str, user_id: &str, perm: HousePermission) -> Result<Model, Error> {
+        match Self::is_in_house(&session.db, &session.user.id, house_id).await? {
+            (h, false) => {
+                session.enforce(Resource::House(HousePermission::ListInvitation)).await?;
+                Ok(h)
+            },
+            (h, _) => Ok(h),
+        }
+    }
+    
+    pub async fn get_invitation(db: DatabaseConnection, (house_id, user_id): (&str, &str)) -> Result<house_user::Model, Error> {
+        Ok(house_user::Entity::find()
+            .filter(house_user::Column::HouseId.eq(house_id).and(house_user::Column::UserId.eq(user_id)))
+            .one(&db)
+            .await?
+            .ok_or(Error::Entity(EntityError::NotFound("HouseUser", house_id.to_owned())))?)
+    }
 
     pub async fn update_house(session: AuthSession, db: DatabaseConnection, house_id: String, body: HouseUpdateRequest) -> Result<Model, Error> {
-        let house_with_users = Self::get_active_house_with_users(&house_id, &db).await?;
+        let house_with_users = Self::get_active_house_with_users(&db, (&house_id, Pagination::all())).await?;
         Self::need_to_be_members(&house_with_users, &session)?;
         let mut model = house_with_users.0.into_active_model();
         model.address = body.address.map_or(model.address, |address| Set(Some(address)));
@@ -132,7 +188,10 @@ impl HouseDomain {
 
     pub async fn delete_house(session: AuthSession, db: DatabaseConnection, house_id: String) -> Result<(), Error> {
         let house = Self::find_active_house_by_id(&house_id, &db).await?;
-        Self::need_to_be_owner(&house, &session)?;
+        match house.created_by == session.user.id {
+            true => (),
+            false => session.enforce(Resource::House(HousePermission::Delete)).await?
+        }
         let mut active_house = house.into_active_model();
         active_house.deleted_at = Set(Some(chrono::Utc::now().naive_utc()));
         active_house.deleted_by = Set(Some(session.user.id));
@@ -149,7 +208,7 @@ impl HouseDomain {
         Ok(())
     }
 
-    pub fn need_to_be_members(house_with_user: &(Model, Vec<entity::user::Model>), session: &AuthSession) -> Result<(), Error> {
+    pub fn need_to_be_members(house_with_user: &(Model, Vec<user::Model>), session: &AuthSession) -> Result<(), Error> {
         let (_, users) = house_with_user;
         let user_ids: Vec<String> = users.iter().map(|user| user.id.clone()).collect();
         if !user_ids.contains(&session.user.id) && house_with_user.0.created_by != session.user.id {
@@ -158,5 +217,31 @@ impl HouseDomain {
             )));
         }
         Ok(())
+    }
+
+    pub async fn get_house(session: &AuthSession, db: &DatabaseConnection, house_id: &str) -> Result<HouseWithUsers, Error> {
+        let (house, users) = Self::get_active_house_with_users(&db, (&house_id, Pagination::all())).await?;
+        if house.created_by == session.user.id || users.iter().find(|user| user.id == session.user.id).is_some() {
+            Ok((house, users))
+        } else {
+            session.enforce(Resource::House(HousePermission::Read)).await?;
+            Ok((house, users))
+        }
+    }
+    
+    pub async fn is_in_house(db: &DatabaseConnection, user_id: &str, house_id: &str) -> Result<(Model, bool), Error> {
+        let house = Self::find_active_house_by_id(house_id, db).await?;
+        match house.created_by == user_id {
+            true => Ok((house, true)),
+            false => {
+                match house_user::Entity::find()
+                    .filter(house_user::Column::HouseId.eq(house_id).and(house_user::Column::UserId.eq(user_id)).and(house_user::Column::Status.eq(HouseUserStatus::Accepted)))
+                    .one(db)
+                    .await {
+                    Ok(Some(_)) => Ok((house, true)),
+                    _ => Ok((house, false))
+                }
+            }
+        }
     }
 }

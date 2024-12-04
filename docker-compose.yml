@@ -1,4 +1,10 @@
 name: "Docker compose development"
+
+x-db-credentials: &db-credentials                             # Use the default POSTGRES_ credentials if they're available or simply default to "listmonk"
+  POSTGRES_USER: &db-user listmonk                            # for database user, password, and database name
+  POSTGRES_PASSWORD: &db-password listmonk
+  POSTGRES_DB: &db-name listmonk
+
 services:
     api:
       container_name: home_api
@@ -29,8 +35,81 @@ services:
       - POSTGRES_USER=home_usr
       - POSTGRES_PASSWORD=home_password
       - POSTGRES_DB=home_db
-
-
+    s3:
+      image: quay.io/minio/minio:RELEASE.2024-11-07T00-52-20Z
+      command: server --console-address ":9001" /data/minio
+      volumes:
+        - data1:/data1
+        - data2:/data2
+      expose:
+        - "9000:9000"
+        - "9001:9001"
+      healthcheck:
+        test: [ "CMD", "mc", "ready", "local" ]
+        interval: 5s
+        timeout: 5s
+        retries: 5
+    listmonk:
+      image: listmonk/listmonk:latest
+      container_name: listmonk_app
+      restart: unless-stopped
+      ports:
+        - "9000:9000"
+      hostname: mail.nikho.dev
+      depends_on:
+        - mail-db
+      command: [ sh, -c, "./listmonk --install --idempotent --yes --config '' && ./listmonk --upgrade --yes --config '' && ./listmonk --config ''" ]
+      environment:
+        LISTMONK_app__address: 0.0.0.0:9000
+        LISTMONK_db__user: *db-user
+        LISTMONK_db__password: *db-password
+        LISTMONK_db__database: *db-name
+        LISTMONK_db__host: listmonk_db
+        LISTMONK_db__port: 5432
+        LISTMONK_db__ssl_mode: disable
+        LISTMONK_db__max_open: 25
+        LISTMONK_db__max_idle: 25
+        LISTMONK_db__max_lifetime: 300s
+        TZ: Etc/UTC
+        LISTMONK_ADMIN_USER: ${LISTMONK_ADMIN_USER:-}
+        LISTMONK_ADMIN_PASSWORD: ${LISTMONK_ADMIN_PASSWORD:-}
+      volumes:
+        - ./uploads:/listmonk/uploads:rw
+    mail-db:
+      image: postgres:17-alpine
+      container_name: listmonk_db
+      restart: unless-stopped
+      environment:
+        <<: *db-credentials
+      healthcheck:
+        test: ["CMD-SHELL", "pg_isready -U listmonk"]
+        interval: 10s
+        timeout: 5s
+        retries: 6
+      volumes:
+        - type: volume
+          source: listmonk-data
+          target: /var/lib/postgresql/data
+    mailserver:
+      image: analogic/poste.io
+      ports:
+        - "80:80"
+        - "25:25"
+        - "110:110"
+        - "143:143"
+        - "587:587"
+        - "993:993"
+        - "995:995"
+        - "4190:4190"
+      environment:
+        - HTTPS=OFF
+      volumes:
+        - /etc/localtime:/etc/localtime:ro
+        - ./nginx/htmlnginx/html/.well-known:/opt/www/.well-known
+        - ./data:/data
 volumes:
   db_data:
   cache_date:
+  data1:
+  data2:
+  listmonk-data:

@@ -59,8 +59,13 @@ impl MigrationTrait for Migration {
                 .if_not_exists()
                 .col(string_len(HouseUser::UserId, 24)).foreign_key(ForeignKey::create().name("fk_house_user_user_id").from(HouseUser::Table, HouseUser::UserId).to(User::Table, User::Id).on_delete(ForeignKeyAction::Cascade).on_update(ForeignKeyAction::Cascade))
                 .col(string_len(HouseUser::HouseId, 24)).foreign_key(ForeignKey::create().name("fk_house_user_house_id").from(HouseUser::Table, HouseUser::HouseId).to(House::Table, House::Id).on_delete(ForeignKeyAction::Cascade).on_update(ForeignKeyAction::Cascade))
+                .col(string_len(HouseUser::InvitedBy, 24))
                 .col(date_time(HouseUser::InvitedAt).default("now()"))
+                .col(string_len_null(HouseUser::RevokedBy, 24))
+                .col(date_time_null(HouseUser::RevokedAt))
+                .col(string_len_null(HouseUser::AcceptedBy, 24))
                 .col(date_time_null(HouseUser::AcceptedAt))
+                .col(string_len_null(HouseUser::DeclinedBy, 24))
                 .col(date_time_null(HouseUser::DeclinedAt))
                 .col(enumeration(HouseUser::Status, Alias::new("house_user_status"), HouseUserStatus::iter()).default(HouseUserStatus::Pending))
                 .to_owned()
@@ -125,7 +130,9 @@ enum HouseUserStatus {
     #[sea_orm(string_value = "accepted")]
     Accepted,
     #[sea_orm(string_value = "declined")]
-    Declined
+    Declined,
+    #[sea_orm(string_value = "revoked")]
+    Revoked,
 }
 
 #[derive(DeriveIden)]
@@ -133,8 +140,13 @@ pub enum HouseUser {
     Table,
     UserId,
     HouseId,
+    InvitedBy,
     InvitedAt,
+    AcceptedBy,
     AcceptedAt,
+    DeclinedBy,
     DeclinedAt,
+    RevokedBy,
+    RevokedAt,
     Status,
 }

@@ -46,18 +46,13 @@ impl UserRoute {
     }
 
     #[instrument]
-    pub async fn create_user(_: AuthSession) -> impl Responder {
-        ""
-    }
-
-    #[instrument]
     pub async fn delete_user(_: AuthSession) -> impl Responder {
         ""
     }
 
     #[instrument(skip(session))]
     pub async fn list_user(session: AuthSession, db: DbReq) -> Result<UserListResponse, Error> {
-        let _users = UserDomain::list_user(session, db.into_inner()).await?;
+        //let _users = UserDomain::list_user(session, db.into_inner()).await?;
         todo!()
     }
 
@@ -77,7 +72,6 @@ impl Route for UserRoute {
         cfg.service(
             scope("/user")
                 .route("", get().to(UserRoute::list_user))
-                .route("", post().to(UserRoute::create_user))
                 .route("{id}", put().to(UserRoute::update_user))
                 .route("{id}", get().to(UserRoute::get_user))
                 .route("{id}", delete().to(UserRoute::delete_user))

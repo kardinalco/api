@@ -3,6 +3,8 @@ use crate::exceptions::error::Error;
 use entity::permission;
 use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
 use tracing::instrument;
+use crate::extractors::pagination::Pagination;
+use crate::services::entity::WithPagination;
 
 pub struct PermissionDomain;
 
@@ -18,6 +20,14 @@ impl PermissionDomain {
     pub async fn list_permission_for_resource(db: &DatabaseConnection, resource: &str) -> Result<Vec<Permission>, Error> {
         Ok(permission::Entity::find()
             .filter(permission::Column::Resource.eq(resource))
+            .all(db)
+            .await?)
+    }
+
+    #[instrument(skip(db))]
+    pub async fn list(db: &DatabaseConnection, pag: Pagination) -> Result<Vec<Permission>, Error> {
+        Ok(permission::Entity::find()
+            .with_pagination(pag)
             .all(db)
             .await?)
     }

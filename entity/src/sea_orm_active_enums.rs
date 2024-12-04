@@ -76,6 +76,8 @@ pub enum HouseUserStatus {
     Declined,
     #[sea_orm(string_value = "pending")]
     Pending,
+    #[sea_orm(string_value = "revoked")]
+    Revoked,
 }
 #[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum, Deserialize)]
 #[sea_orm(rs_type = "String", db_type = "Enum", enum_name = "payment_method")]

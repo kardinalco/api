@@ -67,10 +67,10 @@ impl Route for AuthRoute {
     fn route(cfg: &mut actix_web::web::ServiceConfig) {
         cfg.service(
             scope("/auth")
+                .route("/register", post().to(AuthRoute::register))
                 .route("/login", post().to(AuthRoute::login))
                 .route("/google", get().to(AuthRoute::get_google_login_url))
                 .route("/google", post().to(AuthRoute::google_login))
-                .route("/register", post().to(AuthRoute::register))
                 .route("/logout", post().to(AuthRoute::logout))
                 .route("/forgot-password", post().to(AuthRoute::forgot_password))
                 .route("/reset-password", post().to(AuthRoute::reset_password)),

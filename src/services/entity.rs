@@ -4,6 +4,7 @@ use sea_orm::prelude::Expr;
 use sea_orm::sea_query::Alias;
 use sea_orm::JoinType::LeftJoin;
 use sea_orm::{EntityTrait, QuerySelect, Related, RelationDef, RelationTrait, Select};
+use crate::extractors::pagination::Pagination;
 
 pub struct UserCreatedByUser;
 pub struct UserUpdatedByUser;
@@ -96,5 +97,15 @@ impl WithDeletedByUser for Select<user::Entity> {
     fn with_deleted_user<E: Related<Entity>>(self) -> Self {
         let alias_deleted_by = Alias::new("deleted_by");
         self.join_as(LeftJoin, E::to(), alias_deleted_by)
+    }
+}
+
+pub trait WithPagination {
+    fn with_pagination(self, pagination: Pagination) -> Self;
+}
+
+impl<T: EntityTrait> WithPagination for Select<T> {
+    fn with_pagination(self, pagination: Pagination) -> Self {
+        self.offset(pagination.limit * pagination.page).limit(pagination.limit)
     }
 }

@@ -25,7 +25,7 @@ pub struct AppState {
 impl AppState {
     pub async fn new() -> Result<Self, Error> {
         let config = Config::new()?;
-        Self::initialize_logger(&config);
+        //Self::initialize_logger(&config);
         let cache = build_cache(&config.redis.url).await?;
         let db = build_db(&config.database.url).await?;
         Ok(Self {

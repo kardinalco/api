@@ -2,7 +2,7 @@ use crate::api::user::response::User;
 use actix_web::body::BoxBody;
 use actix_web::http::StatusCode;
 use actix_web::{HttpRequest, HttpResponse, Responder};
-use entity::sea_orm_active_enums::HouseLocationType;
+use entity::sea_orm_active_enums::{HouseLocationType, HouseUserStatus};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize)]
@@ -83,6 +83,49 @@ pub enum HouseType {
     Owned,
     Rented,
     Unknown,
+}
+
+#[derive(Debug, Serialize)]
+pub struct HouseInvitation {
+    pub user: User,
+    pub status: HouseInvitationStatus,
+    pub invited_at: chrono::NaiveDateTime,
+    pub accepted_at: Option<chrono::NaiveDateTime>,
+    pub declined_at: Option<chrono::NaiveDateTime>,
+}
+
+impl HouseInvitation {
+    pub fn from_model(
+        model: entity::house_user::Model,
+        user: entity::user::Model,
+    ) -> Self {
+        Self {
+            user: User::from_model(user),
+            status: HouseInvitationStatus::from(model.status),
+            invited_at: model.invited_at,
+            accepted_at: model.accepted_at,
+            declined_at: model.declined_at,
+        }
+    }
+}
+
+#[derive(Debug, Serialize)]
+pub enum HouseInvitationStatus {
+    Pending,
+    Accepted,
+    Declined,
+    Revoked
+}
+
+impl From<HouseUserStatus> for HouseInvitationStatus {
+    fn from(value: HouseUserStatus) -> Self {
+        match value {
+            HouseUserStatus::Pending => HouseInvitationStatus::Pending,
+            HouseUserStatus::Accepted => HouseInvitationStatus::Accepted,
+            HouseUserStatus::Declined => HouseInvitationStatus::Declined,
+            HouseUserStatus::Revoked => HouseInvitationStatus::Revoked,
+        }
+    }
 }
 
 impl Into<HouseLocationType> for HouseType {
@@ -167,22 +210,10 @@ pub struct HouseUserResponse {
     pub users: Vec<User>,
 }
 
-//
-// House Invite Response
-//
-pub struct HouseInviteResponse;
-
-impl Responder for HouseInviteResponse {
-    type Body = BoxBody;
-    fn respond_to(self, _: &HttpRequest) -> HttpResponse<Self::Body> {
-        HttpResponse::Ok().finish()
-    }
-}
-
-//
-// House Revoke Response
-//
+pub struct HouseListInvitation(pub Vec<HouseInvitation>);
 pub struct HouseRevokeResponse;
+pub struct HouseDeleteResponse;
+pub struct HouseInviteResponse;
 
 impl Responder for HouseRevokeResponse {
     type Body = BoxBody;
@@ -191,14 +222,23 @@ impl Responder for HouseRevokeResponse {
     }
 }
 
-//
-// House Revoke Response
-//
-pub struct HouseDeleteResponse;
-
 impl Responder for HouseDeleteResponse {
     type Body = BoxBody;
     fn respond_to(self, _: &HttpRequest) -> HttpResponse<Self::Body> {
         HttpResponse::Ok().finish()
+    }
+}
+
+impl Responder for HouseInviteResponse {
+    type Body = BoxBody;
+    fn respond_to(self, _: &HttpRequest) -> HttpResponse<Self::Body> {
+        HttpResponse::Ok().finish()
+    }
+}
+
+impl Responder for HouseListInvitation {
+    type Body = BoxBody;
+    fn respond_to(self, _: &HttpRequest) -> HttpResponse<Self::Body> {
+        HttpResponse::Ok().json(self.0)
     }
 }

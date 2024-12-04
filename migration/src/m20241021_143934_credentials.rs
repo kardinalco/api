@@ -20,7 +20,7 @@ impl MigrationTrait for Migration {
                     .col(string_len(Credentials::Name, 64))
                     .col(string_len_null(Credentials::Description, 4096))
                     .col(string_len_null(Credentials::Username, 256))
-                    .col(array_null(Credentials::Password, ColumnType::String(StringLen::N(512))))
+                    .col(array(Credentials::Password, ColumnType::String(StringLen::N(512))))
                     .col(enumeration(Credentials::CredentialsType, Alias::new("credentials_type"), CredentialsAvailableType::iter()).default(CredentialsAvailableType::Other))
                     .col(date_time(Credentials::CreatedAt).default("now()"))
                     .col(string_len_null(Credentials::CreatedBy, 24))

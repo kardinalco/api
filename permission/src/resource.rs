@@ -4,6 +4,10 @@ use crate::provider::ProviderPermission;
 use crate::user::UserPermission;
 use enum_display::EnumDisplay;
 use enum_iterator::{all, Sequence};
+use crate::credential::CredentialPermission;
+use crate::expense::ExpensePermission;
+use crate::permission::Permissions;
+use crate::role::RolePermission;
 
 #[derive(Debug, Clone, Copy, PartialEq, EnumDisplay, Sequence)]
 #[enum_display(case = "Kebab")]
@@ -12,6 +16,10 @@ pub enum Resource {
     House(HousePermission),
     Pet(PetPermission),
     Provider(ProviderPermission),
+    Expense(ExpensePermission),
+    Credential(CredentialPermission),
+    Role(RolePermission),
+    Permission(Permissions),
 }
 
 impl Resource {
@@ -21,6 +29,10 @@ impl Resource {
             Resource::House(house) => house.to_string(),
             Resource::Pet(pet) => pet.to_string(),
             Resource::Provider(provider) => provider.to_string(),
+            Resource::Expense(expense) => expense.to_string(),
+            Resource::Credential(credential) => credential.to_string(),
+            Resource::Role(role) => role.to_string(),
+            Resource::Permission(permission) => permission.to_string(),
         }
     }
 
@@ -41,6 +53,18 @@ impl Resource {
                 .collect::<Vec<Resource>>(),
             all::<ProviderPermission>()
                 .map(|x| Resource::Provider(x))
+                .collect::<Vec<Resource>>(),
+            all::<ExpensePermission>()
+                .map(|x| Resource::Expense(x))
+                .collect::<Vec<Resource>>(),
+            all::<CredentialPermission>()
+                .map(|x| Resource::Credential(x))
+                .collect::<Vec<Resource>>(),
+            all::<RolePermission>()
+                .map(|x| Resource::Role(x))
+                .collect::<Vec<Resource>>(),
+            all::<Permissions>()
+                .map(|x| Resource::Permission(x))
                 .collect::<Vec<Resource>>(),
         ]
         .into_iter()

@@ -31,21 +31,21 @@ impl MigrationTrait for Migration {
 
         manager.create_table(
             Table::create()
-                .table(HomeInsuranceHouse::Table)
-                .primary_key(Index::create().name("pk_home_insurance_house").col(HomeInsuranceHouse::HomeInsuranceId).col(HomeInsuranceHouse::HouseId))
-                .col(string_len(HomeInsuranceHouse::HomeInsuranceId, 24))
-                .col(string_len(HomeInsuranceHouse::HouseId, 24))
-                .col(date_time(HomeInsuranceHouse::CreatedAt).default("now()"))
-                .col(string_len(HomeInsuranceHouse::CreatedBy, 24))
-                .col(date_time_null(HomeInsuranceHouse::UpdatedAt))
-                .col(string_len_null(HomeInsuranceHouse::UpdatedBy, 24))
-                .col(date_time_null(HomeInsuranceHouse::DeletedAt))
-                .col(string_len_null(HomeInsuranceHouse::DeletedBy, 24))
-                .foreign_key(ForeignKey::create().name("fk_home_insurance_house_home_insurance_id").from(HomeInsuranceHouse::Table, HomeInsuranceHouse::HomeInsuranceId).to(HomeInsurance::Table, HomeInsurance::Id).on_delete(ForeignKeyAction::Cascade).on_update(ForeignKeyAction::Cascade))
-                .foreign_key(ForeignKey::create().name("fk_home_insurance_house_house_id").from(HomeInsuranceHouse::Table, HomeInsuranceHouse::HouseId).to(House::Table, House::Id).on_delete(ForeignKeyAction::Cascade).on_update(ForeignKeyAction::Cascade))
-                .foreign_key(ForeignKey::create().name("fk_home_insurance_house_created_by_user_id").from(HomeInsuranceHouse::Table, HomeInsuranceHouse::CreatedBy).to(User::Table, User::Id).on_delete(ForeignKeyAction::SetNull).on_update(ForeignKeyAction::Cascade))
-                .foreign_key(ForeignKey::create().name("fk_home_insurance_house_updated_by_user_id").from(HomeInsuranceHouse::Table, HomeInsuranceHouse::UpdatedBy).to(User::Table, User::Id).on_delete(ForeignKeyAction::SetNull).on_update(ForeignKeyAction::Cascade))
-                .foreign_key(ForeignKey::create().name("fk_home_insurance_house_deleted_by_user_id").from(HomeInsuranceHouse::Table, HomeInsuranceHouse::DeletedBy).to(User::Table, User::Id).on_delete(ForeignKeyAction::SetNull).on_update(ForeignKeyAction::Cascade))
+                .table(HouseHomeInsurance::Table)
+                .primary_key(Index::create().name("pk_house_home_insurance").col(HouseHomeInsurance::HomeInsuranceId).col(HouseHomeInsurance::HouseId))
+                .col(string_len(HouseHomeInsurance::HomeInsuranceId, 24))
+                .col(string_len(HouseHomeInsurance::HouseId, 24))
+                .col(date_time(HouseHomeInsurance::CreatedAt).default("now()"))
+                .col(string_len(HouseHomeInsurance::CreatedBy, 24))
+                .col(date_time_null(HouseHomeInsurance::UpdatedAt))
+                .col(string_len_null(HouseHomeInsurance::UpdatedBy, 24))
+                .col(date_time_null(HouseHomeInsurance::DeletedAt))
+                .col(string_len_null(HouseHomeInsurance::DeletedBy, 24))
+                .foreign_key(ForeignKey::create().name("fk_house_home_insurance_home_insurance_id").from(HouseHomeInsurance::Table, HouseHomeInsurance::HomeInsuranceId).to(HomeInsurance::Table, HomeInsurance::Id).on_delete(ForeignKeyAction::Cascade).on_update(ForeignKeyAction::Cascade))
+                .foreign_key(ForeignKey::create().name("fk_house_home_insurance_house_id").from(HouseHomeInsurance::Table, HouseHomeInsurance::HouseId).to(House::Table, House::Id).on_delete(ForeignKeyAction::Cascade).on_update(ForeignKeyAction::Cascade))
+                .foreign_key(ForeignKey::create().name("fk_house_home_insurance_created_by_user_id").from(HouseHomeInsurance::Table, HouseHomeInsurance::CreatedBy).to(User::Table, User::Id).on_delete(ForeignKeyAction::SetNull).on_update(ForeignKeyAction::Cascade))
+                .foreign_key(ForeignKey::create().name("fk_house_home_insurance_updated_by_user_id").from(HouseHomeInsurance::Table, HouseHomeInsurance::UpdatedBy).to(User::Table, User::Id).on_delete(ForeignKeyAction::SetNull).on_update(ForeignKeyAction::Cascade))
+                .foreign_key(ForeignKey::create().name("fk_house_home_insurance_deleted_by_user_id").from(HouseHomeInsurance::Table, HouseHomeInsurance::DeletedBy).to(User::Table, User::Id).on_delete(ForeignKeyAction::SetNull).on_update(ForeignKeyAction::Cascade))
                 .if_not_exists()
                 .to_owned(),
         ).await?;
@@ -54,7 +54,7 @@ impl MigrationTrait for Migration {
     }
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
-        manager.drop_table(Table::drop().table(HomeInsuranceHouse::Table).to_owned()).await?;
+        manager.drop_table(Table::drop().table(HouseHomeInsurance::Table).to_owned()).await?;
         manager.drop_table(Table::drop().table(HomeInsurance::Table).to_owned()).await
     }
 }
@@ -74,7 +74,7 @@ enum HomeInsurance {
 }
 
 #[derive(DeriveIden)]
-enum HomeInsuranceHouse {
+enum HouseHomeInsurance {
     Table,
     HomeInsuranceId,
     HouseId,

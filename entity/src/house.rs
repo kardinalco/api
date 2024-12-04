@@ -44,8 +44,8 @@ pub enum Relation {
     CredentialsHouse,
     #[sea_orm(has_many = "super::expense_house::Entity")]
     ExpenseHouse,
-    #[sea_orm(has_many = "super::home_insurance_house::Entity")]
-    HomeInsuranceHouse,
+    #[sea_orm(has_many = "super::house_home_insurance::Entity")]
+    HouseHomeInsurance,
     #[sea_orm(has_many = "super::house_user::Entity")]
     HouseUser,
     #[sea_orm(has_many = "super::pet_house::Entity")]
@@ -90,9 +90,9 @@ impl Related<super::expense_house::Entity> for Entity {
     }
 }
 
-impl Related<super::home_insurance_house::Entity> for Entity {
+impl Related<super::house_home_insurance::Entity> for Entity {
     fn to() -> RelationDef {
-        Relation::HomeInsuranceHouse.def()
+        Relation::HouseHomeInsurance.def()
     }
 }
 

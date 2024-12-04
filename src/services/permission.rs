@@ -70,7 +70,7 @@ impl Permission {
 
     async fn get_permission_from_cache(&self) -> Result<Vec<Role>, Error> {
         let mut conn = self.cache.get().await?;
-        let roles: String = conn.get("roles").await?;
+        let roles: String = conn.json_get("roles", ".").await?;
         Ok(serde_json::from_str(&roles).map_err(|_| {
             Error::Cache(CacheError::ConnectionError("roles".to_owned()))
         })?)

@@ -6,3 +6,4 @@ pub mod hash;
 pub mod permission;
 pub mod rbac;
 pub mod settings;
+pub mod mail;
