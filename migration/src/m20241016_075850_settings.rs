@@ -1,6 +1,7 @@
 use cuid2::cuid;
 use sea_orm_migration::{async_trait, prelude::*, schema::*};
 use serde_json::json;
+use settings::bucket::Bucket;
 use settings::cache::Cache;
 use settings::global::Global;
 use settings::google::Google;
@@ -38,6 +39,7 @@ impl MigrationTrait for Migration {
             ("mail", "Mail settings (smtp, from address...)", json!(Mail::default())),
             ("global", "Global settings (pagination, default language...)", json!(Global::default())),
             ("cache", "Cache settings (ttl, refresh...)", json!(Cache::default())),
+            ("bucket", "Bucket settings (storage, access...)", json!(json!(Bucket::default()))),
         ];
 
         let mut google =  Query::insert()

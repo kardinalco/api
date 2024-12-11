@@ -10,6 +10,8 @@ pub enum RequestError {
     GoogleInvalidState,
     #[error("{0}")]
     Internal(String),
+    #[error("Invalid mime type !")]
+    InvalidMimeType
 }
 
 impl ResponseError for RequestError {
@@ -17,6 +19,7 @@ impl ResponseError for RequestError {
         match self {
             RequestError::Internal(_) => StatusCode::INTERNAL_SERVER_ERROR,
             RequestError::GoogleInvalidState => StatusCode::BAD_REQUEST,
+            RequestError::InvalidMimeType => StatusCode::BAD_REQUEST,
         }
     }
 

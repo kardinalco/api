@@ -1,17 +1,19 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, Default)]
 pub struct Mail {
+    listmonk: ListMonk,
     smtp: Smtp,
     from_addr: String,
 }
 
-impl Default for Mail {
-    fn default() -> Self {
-        Mail {
-            smtp: Smtp::default(),
-            from_addr: String::from(""),
-        }
+impl Mail {
+    pub fn smtp(&self) -> &Smtp {
+        &self.smtp
+    }
+
+    pub fn listmonk(&self) -> &ListMonk {
+        &self.listmonk
     }
 }
 
@@ -34,10 +36,37 @@ pub enum SmtpTlsKind {
 impl Default for Smtp {
     fn default() -> Self {
         Smtp {
-            host: String::from(""),
-            password: String::from(""),
-            tls: SmtpTlsKind::default(),
             port: 587,
+            tls: SmtpTlsKind::StartTls,
+            password: Default::default(),
+            host: Default::default(),
         }
     }
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ListMonk {
+    pub api_user: String,
+    pub api_host: String,
+    pub api_key: String,
+    pub templates: ListMonkTemplates,
+}
+
+impl Default for ListMonk {
+    fn default() -> Self {
+        ListMonk {
+            api_host: String::from("http://localhost:9030/api"),
+            api_user: Default::default(),
+            api_key: Default::default(),
+            templates: Default::default(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize, Default)]
+pub struct ListMonkTemplates {
+    pub verification: i32,
+    pub welcome: i32,
+    pub reset_password: i32,
+    pub password_changed: i32,
 }

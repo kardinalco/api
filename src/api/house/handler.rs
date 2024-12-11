@@ -60,8 +60,8 @@ impl HouseRoute {
         Ok(HouseRevokeResponse {})
     }
 
-    #[instrument(skip(session))]
-    pub async fn get_invitation(session: AuthSession, db: DbReq, path: Path<(String, String)>) -> Result<String, Error> {
+    #[instrument(skip(_session))]
+    pub async fn get_invitation(_session: AuthSession, _db: DbReq, _path: Path<(String, String)>) -> Result<String, Error> {
         Ok("".to_string())
     }
 

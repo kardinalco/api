@@ -51,3 +51,19 @@ impl AuthRegisterRequest {
         })
     }
 }
+
+#[derive(Deserialize, Debug, Clone, Validate)]
+pub struct AuthVerifyRequest {
+    pub code: String,
+}
+
+#[derive(Deserialize, Debug, Clone, Validate)]
+pub struct AuthForgotPasswordRequest {
+    pub email: String,
+}
+
+#[derive(Deserialize, Debug, Clone, Validate)]
+pub struct AuthResetPasswordRequest {
+    pub code: String,
+    pub password: String,
+}

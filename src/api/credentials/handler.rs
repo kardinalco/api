@@ -15,8 +15,8 @@ pub struct CredentialsRoute;
 
 impl CredentialsRoute {
 
-    #[instrument(skip(session, db))]
-    async fn list_credentials(session: AuthSession, db: DbReq) -> Result<String, Error> {
+    #[instrument(skip(_session, _db))]
+    async fn list_credentials(_session: AuthSession, _db: DbReq) -> Result<String, Error> {
         Ok("".to_string())
     }
     

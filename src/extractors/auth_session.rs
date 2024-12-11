@@ -5,6 +5,8 @@ use entity::prelude::User;
 use actix_session::Session;
 use actix_web::{FromRequest, HttpRequest};
 use actix_web::dev::Payload;
+use bb8::Pool;
+use bb8_redis::RedisConnectionManager;
 use futures_util::future;
 use permission::resource::Resource;
 use sea_orm::{DatabaseConnection, EntityTrait};
@@ -20,6 +22,7 @@ pub struct AuthSession {
     pub session: Session,
     pub permission: Permission,
     pub db: DatabaseConnection,
+    pub cache: Pool<RedisConnectionManager>,
 }
 
 impl AuthSession {
@@ -63,7 +66,7 @@ impl FromRequest for AuthSession {
             let user = User::find_by_id(user_id).one(&db).await
                 .map_err(|_| Error::Auth(NeedSession))?
                 .ok_or(Error::Auth(NeedSession))?;
-            Ok(AuthSession { user, session, permission: Permission::new(Arc::new(db.clone()), Arc::new(cache.into_inner())), db})
+            Ok(AuthSession { user, session, permission: Permission::new(Arc::new(db.clone()), Arc::new(cache.clone().into_inner())), db, cache: cache.into_inner()})
         })
     }
 }

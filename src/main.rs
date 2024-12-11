@@ -17,6 +17,7 @@ mod middleware;
 mod services;
 mod test_helpers;
 mod utils;
+mod entity;
 
 use crate::api::credentials::handler::CredentialsRoute;
 use crate::api::expense::handler::ExpenseRoute;
@@ -28,16 +29,16 @@ use actix_web::middleware::{NormalizePath, TrailingSlash};
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    
     let state: AppState = AppState::new().await.map_err(|e| {
-        println!("Error: {:?}", e);
         std::io::Error::new(std::io::ErrorKind::Other, "Failed to start server")
     })?;
-    let settings = state.settings.clone();
+    
     HttpServer::new(move || {
         App::new()
             .wrap(SessionMiddleware::builder(
                     state.session_store.clone(),
-                    Key::from(settings.keys.session.as_bytes())).session_lifecycle(PersistentSession::default().session_ttl(Duration::seconds(60 * 60 * 24 * 2)))
+                    Key::from(state.settings.keys.session.as_bytes())).session_lifecycle(PersistentSession::default().session_ttl(Duration::seconds(60 * 60 * 24 * 2)))
                 .build())
             .app_data(Data::new(state.clone()))
             .configure(AuthRoute::route)
@@ -48,7 +49,7 @@ async fn main() -> std::io::Result<()> {
             .configure(PermissionRoute::route)
             .wrap(NormalizePath::new(TrailingSlash::Trim))
     })
-    .bind(format!("0.0.0.0:{}", settings.api.port))?
+    .bind(format!("0.0.0.0:{}", 3001))?
     .run()
     .await
 }

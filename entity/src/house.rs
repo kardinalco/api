@@ -44,8 +44,12 @@ pub enum Relation {
     CredentialsHouse,
     #[sea_orm(has_many = "super::expense_house::Entity")]
     ExpenseHouse,
+    #[sea_orm(has_many = "super::home_waste::Entity")]
+    HomeWaste,
     #[sea_orm(has_many = "super::house_home_insurance::Entity")]
     HouseHomeInsurance,
+    #[sea_orm(has_many = "super::house_note::Entity")]
+    HouseNote,
     #[sea_orm(has_many = "super::house_user::Entity")]
     HouseUser,
     #[sea_orm(has_many = "super::pet_house::Entity")]
@@ -90,9 +94,21 @@ impl Related<super::expense_house::Entity> for Entity {
     }
 }
 
+impl Related<super::home_waste::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::HomeWaste.def()
+    }
+}
+
 impl Related<super::house_home_insurance::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::HouseHomeInsurance.def()
+    }
+}
+
+impl Related<super::house_note::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::HouseNote.def()
     }
 }
 
@@ -111,6 +127,15 @@ impl Related<super::pet_house::Entity> for Entity {
 impl Related<super::provider_house::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::ProviderHouse.def()
+    }
+}
+
+impl Related<super::note::Entity> for Entity {
+    fn to() -> RelationDef {
+        super::house_note::Relation::Note.def()
+    }
+    fn via() -> Option<RelationDef> {
+        Some(super::house_note::Relation::House.def().rev())
     }
 }
 

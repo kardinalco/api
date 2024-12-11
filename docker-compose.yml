@@ -37,7 +37,7 @@ services:
       - POSTGRES_DB=home_db
     s3:
       image: quay.io/minio/minio:RELEASE.2024-11-07T00-52-20Z
-      command: server --console-address ":9001" /data/minio
+      command: server --console-address "0.0.0.0:9001" /data/minio
       volumes:
         - data1:/data1
         - data2:/data2
@@ -54,7 +54,7 @@ services:
       container_name: listmonk_app
       restart: unless-stopped
       ports:
-        - "9000:9000"
+        - "9030:9000"
       hostname: mail.nikho.dev
       depends_on:
         - mail-db

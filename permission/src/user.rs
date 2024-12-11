@@ -6,9 +6,10 @@ use enum_iterator::Sequence;
 pub enum UserPermission {
     All,
     Read,
-    Write,
+    ReadSelf,
     Delete,
+    DeletedSelf,
     Update,
-    Create,
+    UpdateSelf,
     List,
 }

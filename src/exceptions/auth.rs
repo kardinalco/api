@@ -24,6 +24,9 @@ pub enum AuthenticateError {
 
     #[error("{0}")]
     Unauthorized(String),
+    
+    #[error("Invalid code")]
+    InvalidCode
 }
 
 impl ResponseError for AuthenticateError {

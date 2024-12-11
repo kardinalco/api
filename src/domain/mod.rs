@@ -5,3 +5,4 @@ pub mod role;
 pub mod user;
 pub mod expense;
 pub mod credential;
+mod mail;

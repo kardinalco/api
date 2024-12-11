@@ -81,3 +81,26 @@ impl Responder for GoogleLoginResponse {
         HttpResponse::Ok().json(self)
     }
 }
+
+#[derive(Debug, Serialize)]
+pub struct AuthVerifyResponse {
+    pub message: &'static str,
+    pub user: User,
+}
+
+impl AuthVerifyResponse {
+    pub fn new(user: entity::user::Model) -> Self {
+        AuthVerifyResponse {
+            message: "Verification successful",
+            user: User::from_model(user),
+        }
+    }
+}
+
+impl Responder for AuthVerifyResponse {
+    type Body = BoxBody;
+
+    fn respond_to(self, _: &HttpRequest) -> HttpResponse<Self::Body> {
+        HttpResponse::Ok().json(self)
+    }
+}

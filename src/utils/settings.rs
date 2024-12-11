@@ -2,9 +2,11 @@ use crate::services::cache::CachedSettings;
 use redis::{ErrorKind, FromRedisValue};
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
+use settings::bucket::Bucket;
 use settings::global::Global;
 use settings::google::Google;
 use settings::cache::Cache;
+use settings::mail::Mail;
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Settings<T>(T);
@@ -41,5 +43,17 @@ impl CachedSettings for Settings<Global> {
 impl CachedSettings for Settings<Cache> {
     fn get_key<'a>() -> &'a str {
         "cache"
+    }
+}
+
+impl CachedSettings for Settings<Mail> {
+    fn get_key<'a>() -> &'a str {
+        "mail"
+    }
+}
+
+impl CachedSettings for Settings<Bucket> {
+    fn get_key<'a>() -> &'a str {
+        "bucket"
     }
 }

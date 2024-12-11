@@ -1,43 +1,66 @@
-use crate::api::user::request::UserUpdateRequest;
+use crate::api::user::request::{UploadProfilePictureRequest, UserUpdateRequest};
 use crate::exceptions::entity::EntityError;
 use crate::exceptions::error::Error;
-use crate::extractors::auth_session::AuthSession;
 use entity::user::{Entity, Model};
-use sea_orm::{ActiveModelTrait, DatabaseConnection, EntityTrait, IntoActiveModel, Set};
+use sea_orm::{DatabaseConnection, EntityTrait};
+use permission::resource::Resource;
+use permission::user::UserPermission;
+use crate::entity::user::UpdateUser;
+use crate::extractors::auth_session::AuthSession;
+use crate::services::storage::StorageService;
 
 pub struct UserDomain;
 
 impl UserDomain {
 
-    pub async fn find_active_user_by_id(
-        user_id: &String,
-        db: &DatabaseConnection,
-    ) -> Result<Model, Error> {
+    pub async fn find_active_user_by_id(session: &AuthSession, user_id: &str) -> Result<Model, Error> {
+        match session.user.id == user_id {
+            true => (),
+            false => session.enforce(Resource::User(UserPermission::Read)).await?
+        };
         Entity::find_by_id(user_id)
-            .one(db)
+            .one(&session.db)
             .await?
-            .ok_or(Error::Entity(EntityError::NotFound(
-                "User",
-                user_id.to_owned(),
-            )))
+            .ok_or(Error::Entity(EntityError::NotFound("User", user_id.to_owned())))
+        
     }
 
-    pub async fn update(updated_by: String, user_id: String, db: &DatabaseConnection, body: UserUpdateRequest) -> Result<Model, Error> {
+    pub async fn update(session: AuthSession, user_id: String, db: &DatabaseConnection, body: UserUpdateRequest) -> Result<Model, Error> {
+        match user_id == session.user.id {
+            true => (),
+            false => session.enforce(Resource::User(UserPermission::Update)).await?
+        };
         let user = Entity::find_by_id(user_id.clone())
             .one(db)
             .await?
             .ok_or(Error::Entity(EntityError::NotFound("User", user_id)))?;
-        let mut model = user.into_active_model();
-        model.address = body.address.map_or(model.address, |address| Set(Some(address)));
-        model.first_name = body.firstname.map_or(model.first_name, |first_name| Set(first_name));
-        model.last_name = body.lastname.map_or(model.last_name, |last_name| Set(last_name));
-        model.phone_number = body.phone_number.map_or(model.phone_number, |phone| Set(Some(phone)));
-        model.birthday = body.birthday.map_or(model.birthday, |birthday| Set(Some(birthday)));
-        model.city = body.city.map_or(model.city, |city| Set(Some(city)));
-        model.country = body.country.map_or(model.country, |country| Set(Some(country)));
-        model.zip_code = body.zip_code.map_or(model.zip_code, |zip_code| Set(Some(zip_code)));
-        model.updated_at = Set(Some(chrono::Utc::now().naive_utc()));
-        model.updated_by = Set(Some(updated_by));
-        Ok(model.update(db).await?)
+
+        user.update(db, body, Some(session.user.id)).await
+    }
+    
+    pub async fn update_user_profile_picture(session: AuthSession, user_id: &str, picture: UploadProfilePictureRequest) -> Result<Model, Error> {
+        match user_id == &session.user.id {
+            true => (),
+            false => session.enforce(Resource::User(UserPermission::Update)).await?
+        };
+        let user = Self::find_active_user_by_id(&session, user_id).await?;
+        
+        let code = StorageService::upload_user_profile_picture(&session.db, &session.cache, picture.file).await?;
+        user.update_profile_picture(&session.db, &code, Some(session.user.id)).await
+    }
+    
+    pub async fn delete_user_profile_picture(session: AuthSession, user_id: &str) -> Result<Model, Error> {
+        match user_id == session.user.id {
+            true => (),
+            false => session.enforce(Resource::User(UserPermission::Update)).await?
+        };
+        let user = Self::find_active_user_by_id(&session, user_id).await?;
+        match &user.picture.clone() {
+            Some(picture) => {
+                StorageService::delete_user_profile_picture(&session.db, &session.cache, &picture).await?;
+                user.update_profile_picture(&session.db, picture, Some(session.user.id)).await
+            },
+            None => Ok(user)
+        }
     }
 }

@@ -13,9 +13,11 @@ pub struct Model {
     pub last_name: String,
     #[sea_orm(unique)]
     pub email: String,
+    pub email_id: Option<i32>,
     pub password: String,
     pub is_active: bool,
     pub is_deleted: bool,
+    pub is_verified: bool,
     pub phone_number: Option<String>,
     pub birthday: Option<Date>,
     pub country: Option<String>,

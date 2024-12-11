@@ -80,6 +80,14 @@ pub enum HouseUserStatus {
     Revoked,
 }
 #[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum, Deserialize)]
+#[sea_orm(rs_type = "String", db_type = "Enum", enum_name = "note_type")]
+pub enum NoteType {
+    #[sea_orm(string_value = "flexible")]
+    Flexible,
+    #[sea_orm(string_value = "tasks")]
+    Tasks,
+}
+#[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum, Deserialize)]
 #[sea_orm(rs_type = "String", db_type = "Enum", enum_name = "payment_method")]
 pub enum PaymentMethod {
     #[sea_orm(string_value = "bank_transfer")]

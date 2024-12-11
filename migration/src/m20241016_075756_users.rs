@@ -18,9 +18,11 @@ impl MigrationTrait for Migration {
                     .col(string_len(User::FirstName, 64))
                     .col(string_len(User::LastName, 64))
                     .col(string_len_uniq(User::Email, 128))
+                    .col(integer_null(User::EmailId))
                     .col(string_len(User::Password, 128))
                     .col(boolean(User::IsActive).default(false))
                     .col(boolean(User::IsDeleted).default(false))
+                    .col(boolean(User::IsVerified).default(false))
                     .col(string_len_null(User::PhoneNumber, 20))
                     .col(date_null(User::Birthday))
                     .col(string_len_null(User::Country, 64))
@@ -67,6 +69,7 @@ pub enum User {
     Table,
     Id,
     Email,
+    EmailId,
     FirstName,
     LastName,
     Birthday,
@@ -79,6 +82,7 @@ pub enum User {
     Address,
     IsDeleted,
     IsActive,
+    IsVerified,
     UpdatedAt,
     UpdatedBy,
     CreatedAt,

@@ -27,20 +27,20 @@ impl ExpenseRoute {
         Ok("".to_string())
     }
 
-    #[instrument(skip(session, db))]
-    pub async fn list_expense(session: AuthSession, db: DbReq, house_id: Path<String>) -> Result<String, Error> {
+    #[instrument(skip(session, _db))]
+    pub async fn list_expense(session: AuthSession, _db: DbReq, _house_id: Path<String>) -> Result<String, Error> {
         session.enforce(Resource::Expense(ExpensePermission::List)).await?;
         Ok("".to_string())
     }
 
-    #[instrument(skip(session, db))]
-    pub async fn delete_expense(session: AuthSession, db: DbReq, house_id: Path<String>) -> Result<String, Error> {
+    #[instrument(skip(session, _db))]
+    pub async fn delete_expense(session: AuthSession, _db: DbReq, _house_id: Path<String>) -> Result<String, Error> {
         session.enforce_or(vec![Resource::Expense(ExpensePermission::DeleteSelf), Resource::Expense(ExpensePermission::Delete)]).await?;
         Ok("".to_string())
     }
 
-    #[instrument(skip(session, db))]
-    pub async fn update_expense(session: AuthSession, db: DbReq, house_id: Path<String>, body: Dto<ExpenseUpdateRequest>) -> Result<String, Error> {
+    #[instrument(skip(session, _db))]
+    pub async fn update_expense(session: AuthSession, _db: DbReq, house_id: Path<String>, _body: Dto<ExpenseUpdateRequest>) -> Result<String, Error> {
         session.enforce_or(vec![Resource::Expense(ExpensePermission::UpdateSelf), Resource::Expense(ExpensePermission::Update)]).await?;
         Ok("".to_string())
     }

@@ -8,6 +8,7 @@ use bb8_redis::RedisConnectionManager;
 use std::future::Future;
 use std::pin::Pin;
 
+#[derive(Clone)]
 pub struct Cache(Pool<RedisConnectionManager>);
 
 impl FromRequest for Cache {

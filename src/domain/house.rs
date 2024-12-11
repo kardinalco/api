@@ -135,7 +135,7 @@ impl HouseDomain {
     }
     
     pub async fn list_users(session: AuthSession, db: DatabaseConnection, house_id: &str) -> Result<Vec<(house_user::Model, user::Model)>, Error> {
-        let house = Self::_get_house(&session, house_id, &session.user.id, HousePermission::ListInvitation).await?;
+        Self::_get_house(&session, house_id, &session.user.id, HousePermission::ListInvitation).await?;
         Ok(house_user::Entity::find()
             .find_also_related(user::Entity)
             .filter(house_user::Column::HouseId.eq(house_id))
@@ -149,7 +149,7 @@ impl HouseDomain {
         }).collect())
     }
     
-    async fn _get_house(session: &AuthSession, house_id: &str, user_id: &str, perm: HousePermission) -> Result<Model, Error> {
+    async fn _get_house(session: &AuthSession, house_id: &str, _user_id: &str, _perm: HousePermission) -> Result<Model, Error> {
         match Self::is_in_house(&session.db, &session.user.id, house_id).await? {
             (h, false) => {
                 session.enforce(Resource::House(HousePermission::ListInvitation)).await?;

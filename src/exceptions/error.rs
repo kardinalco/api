@@ -11,6 +11,8 @@ use actix_web::http::StatusCode;
 use actix_web::{HttpResponse, Responder, ResponseError};
 use bb8::RunError;
 use redis::RedisError;
+use s3::creds::error::CredentialsError;
+use s3::error::S3Error;
 use sea_orm::DbErr;
 use serde::Serialize;
 use serde_json::json;
@@ -64,6 +66,7 @@ impl ResponseError for Error {
             Error::Database(e) => e.error_response(),
             Error::Entity(e) => e.error_response(),
             Error::Request(e) => e.error_response(),
+            Error::Settings(e) => e.error_response(),
             _ => unimplemented!(),
         }
     }
@@ -150,5 +153,17 @@ impl From<RedisError> for Error {
 impl From<RequestError> for Error {
     fn from(value: RequestError) -> Self {
         Error::Request(value)
+    }
+}
+
+impl From<S3Error> for Error {
+    fn from(value: S3Error) -> Self {
+        Error::Settings(SettingsError::from(value))
+    }
+}
+
+impl From<CredentialsError> for Error {
+    fn from(value: CredentialsError) -> Self {
+        Error::Settings(SettingsError::from(value))
     }
 }

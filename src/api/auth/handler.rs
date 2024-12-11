@@ -1,5 +1,5 @@
-use crate::api::auth::request::{AuthLoginRequest, AuthLoginWithGoogleRequest, AuthRegisterRequest};
-use crate::api::auth::response::{AuthLoginResponse, AuthRegisterResponse, GoogleGetUrlResponse, GoogleLoginResponse};
+use crate::api::auth::request::{AuthForgotPasswordRequest, AuthLoginRequest, AuthLoginWithGoogleRequest, AuthRegisterRequest, AuthResetPasswordRequest, AuthVerifyRequest};
+use crate::api::auth::response::{AuthLoginResponse, AuthRegisterResponse, AuthVerifyResponse, GoogleGetUrlResponse, GoogleLoginResponse};
 use crate::domain::auth::AuthDomain;
 use crate::exceptions::error::Error;
 use crate::extractors::auth_session::AuthSession;
@@ -10,7 +10,7 @@ use crate::utils::route::Route;
 use actix_session::Session;
 use actix_web::http::StatusCode;
 use actix_web::web::{get, post, scope};
-use actix_web::{HttpResponse, Responder};
+use actix_web::{HttpResponse};
 use tracing::instrument;
 
 pub struct AuthRoute;
@@ -25,9 +25,13 @@ impl AuthRoute {
     #[instrument(skip(body, db, cache))]
     async fn register(body: Dto<AuthRegisterRequest>, db: DbReq, cache: Cache) -> Result<AuthRegisterResponse, Error> {
         AuthDomain::register(body.into_inner(), db.into_inner(), cache.into_inner()).await?;
-        Ok(AuthRegisterResponse {
-            message: "User registered successfully",
-        })
+        Ok(AuthRegisterResponse { message: "User registered successfully" })
+    }
+
+    #[instrument(skip(body, db, cache))]
+    async fn verify(db: DbReq, cache: Cache, body: Dto<AuthVerifyRequest>) -> Result<AuthVerifyResponse, Error> {
+        let user = AuthDomain::verify_user(&db.into_inner(), &cache.into_inner(), &body.into_inner().code).await?;
+        Ok(AuthVerifyResponse::new(user))
     }
 
     #[instrument(skip(auth_session))]
@@ -36,14 +40,16 @@ impl AuthRoute {
         Ok(HttpResponse::new(StatusCode::OK))
     }
 
-    #[instrument]
-    async fn forgot_password() -> impl Responder {
-        ""
+    #[instrument(skip(body, db, cache))]
+    async fn forgot_password(db: DbReq, cache: Cache, body: Dto<AuthForgotPasswordRequest>) -> Result<HttpResponse, Error> {
+        AuthDomain::forgot_password(&db.into_inner(), &cache.into_inner(), &body.into_inner().email).await?;
+        Ok(HttpResponse::new(StatusCode::OK))
     }
 
-    #[instrument]
-    async fn reset_password() -> impl Responder {
-        ""
+    #[instrument(skip(body, db, cache))]
+    async fn reset_password(db: DbReq, cache: Cache, body: Dto<AuthResetPasswordRequest>) -> Result<HttpResponse, Error> {
+        AuthDomain::reset_password(&db.into_inner(), &cache.into_inner(), &body.into_inner()).await?;
+        Ok(HttpResponse::new(StatusCode::OK))
     }
 
     #[instrument(skip(db, cache))]
@@ -69,6 +75,7 @@ impl Route for AuthRoute {
             scope("/auth")
                 .route("/register", post().to(AuthRoute::register))
                 .route("/login", post().to(AuthRoute::login))
+                .route("/verify", post().to(AuthRoute::verify))
                 .route("/google", get().to(AuthRoute::get_google_login_url))
                 .route("/google", post().to(AuthRoute::google_login))
                 .route("/logout", post().to(AuthRoute::logout))

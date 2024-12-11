@@ -43,17 +43,11 @@ pub struct Keys {
 }
 
 #[derive(Serialize, Deserialize, Clone, Default)]
-pub struct Api {
-    pub port: i32,
-}
-
-#[derive(Serialize, Deserialize, Clone, Default)]
 pub struct Config {
     pub database: Database,
     pub log: Log,
     pub redis: Redis,
     pub keys: Keys,
-    pub api: Api,
 }
 
 impl Config {

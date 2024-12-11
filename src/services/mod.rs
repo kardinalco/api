@@ -7,3 +7,4 @@ pub mod permission;
 pub mod rbac;
 pub mod settings;
 pub mod mail;
+pub mod storage;
