@@ -17,9 +17,9 @@ pub trait CachedSettings: Sized + DeserializeOwned + Serialize + FromRedisValue 
     }
 
     async fn new(redis: &Pool<RedisConnectionManager>, db: &DatabaseConnection) -> Result<Self, Error> {
-        match Self::get_from_cache(redis).await {
-            Ok(settings) => Ok(settings),
-            Err(_) => {
+        match Self::get_from_cache(redis).await? {
+            Some(settings) => Ok(settings),
+            None => {
                 let result = Self::get_from_db(db).await?;
                 result.save_to_cache(redis).await?;
                 Ok(result)
@@ -27,9 +27,9 @@ pub trait CachedSettings: Sized + DeserializeOwned + Serialize + FromRedisValue 
         }
     }
 
-    async fn get_from_cache(redis: &Pool<RedisConnectionManager>) -> Result<Self, Error> {
+    async fn get_from_cache(redis: &Pool<RedisConnectionManager>) -> Result<Option<Self>, Error> {
         let mut a = redis.get().await?;
-        Ok(a.json_get(Self::get_key(), ".").await?)
+        Ok(a.json_get::<_, &str, Option<Self>>(Self::get_key(), ".").await.unwrap_or(None))
     }
 
     async fn get_from_db(db: &DatabaseConnection) -> Result<Self, Error> {
@@ -74,8 +74,8 @@ pub trait CachedSettings: Sized + DeserializeOwned + Serialize + FromRedisValue 
     #[allow(dependency_on_unit_never_type_fallback)]
     async fn save_to_cache(&self, redis: &Pool<RedisConnectionManager>) -> Result<(), Error> {
         let mut conn = redis.get().await?;
-        conn.json_set(Self::get_key(), ".", self).await?;
-        conn.expire(Self::get_key(), self.get_ttl()).await?;
+        conn.json_set::<_, &str, Self, _>(Self::get_key(), ".", self).await?;
+        conn.expire::<_, String>(Self::get_key(), self.get_ttl()).await?;
         Ok(())
     }
 }

@@ -3,7 +3,8 @@ use entity::{role, user};
 use sea_orm::prelude::Expr;
 use sea_orm::sea_query::Alias;
 use sea_orm::JoinType::LeftJoin;
-use sea_orm::{EntityTrait, QuerySelect, Related, RelationDef, RelationTrait, Select};
+use sea_orm::{EntityTrait, QueryFilter, QuerySelect, Related, RelationDef, RelationTrait, Select};
+use crate::extractors::filter::{build_condition, Filter, IntoColumn};
 use crate::extractors::pagination::Pagination;
 
 pub struct UserCreatedByUser;
@@ -107,5 +108,18 @@ pub trait WithPagination {
 impl<T: EntityTrait> WithPagination for Select<T> {
     fn with_pagination(self, pagination: Pagination) -> Self {
         self.offset(pagination.limit * pagination.page).limit(pagination.limit)
+    }
+}
+
+pub trait WithFilter<T: IntoColumn> {
+    fn with_filter(self, filter: Filter<T>) -> Self;
+}
+
+impl<T: EntityTrait, U: IntoColumn> WithFilter<U> for Select<T> {
+    fn with_filter(self, filter: Filter<U>) -> Self {
+        match filter.into_inner() {
+            Some(condition) => self.filter(build_condition(&condition)),
+            None => self,
+        }
     }
 }

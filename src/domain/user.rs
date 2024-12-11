@@ -5,8 +5,10 @@ use entity::user::{Entity, Model};
 use sea_orm::{DatabaseConnection, EntityTrait};
 use permission::resource::Resource;
 use permission::user::UserPermission;
-use crate::entity::user::UpdateUser;
+use crate::entity::user::{UpdateUser, UserFields};
 use crate::extractors::auth_session::AuthSession;
+use crate::extractors::filter::{Filter};
+use crate::services::entity::WithFilter;
 use crate::services::storage::StorageService;
 
 pub struct UserDomain;
@@ -22,7 +24,6 @@ impl UserDomain {
             .one(&session.db)
             .await?
             .ok_or(Error::Entity(EntityError::NotFound("User", user_id.to_owned())))
-        
     }
 
     pub async fn update(session: AuthSession, user_id: String, db: &DatabaseConnection, body: UserUpdateRequest) -> Result<Model, Error> {
@@ -63,4 +64,11 @@ impl UserDomain {
             None => Ok(user)
         }
     }
+
+    pub async fn query(session: &AuthSession, filter: Filter<UserFields>) -> Result<Vec<Model>, Error> {
+        Ok(Entity::find()
+            .with_filter(filter)
+            .all(&session.db).await?)
+    }
+    
 }

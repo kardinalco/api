@@ -135,14 +135,13 @@ impl From<RunError<RedisError>> for Error {
 
 impl From<anyhow::Error> for Error {
     fn from(value: anyhow::Error) -> Self {
-        println!("{:?}", value);
+        println!("cd {:?}", value);
         todo!()
     }
 }
 
 impl From<RedisError> for Error {
     fn from(value: RedisError) -> Self {
-        println!("{:?}", value);
         match value.kind() {
             redis::ErrorKind::TypeError => Error::InternalServer("Cannot parse value".to_string()),
             _ => Error::InternalServer("Unknown error".to_string()),

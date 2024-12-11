@@ -80,8 +80,8 @@ impl Permission {
     async fn save_permission_to_cache(&self, role: Vec<Role>) -> Result<(), Error> {
         let cache = Settings::<Cache>::new(&self.cache, &self.db).await?.into_inner();
         let mut conn = self.cache.get().await?;
-        conn.json_set(KEY, ".", &role).await?;
-        conn.expire(KEY, cache.get_permission_ttl()).await?;
+        conn.json_set::<_, &str, Vec<Role>, _>(KEY, ".", &role).await?;
+        conn.expire::<_, String>(KEY, cache.get_permission_ttl()).await?;
         Ok(())
     }
 

@@ -30,7 +30,7 @@ use actix_web::middleware::{NormalizePath, TrailingSlash};
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     
-    let state: AppState = AppState::new().await.map_err(|e| {
+    let state: AppState = AppState::new().await.map_err(|_| {
         std::io::Error::new(std::io::ErrorKind::Other, "Failed to start server")
     })?;
     

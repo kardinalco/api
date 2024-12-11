@@ -1,7 +1,39 @@
+use entity::user::Column;
 use sea_orm::{ActiveModelTrait, DatabaseConnection, IntoActiveModel};
 use sea_orm::ActiveValue::Set;
+use serde::Deserialize;
 use crate::exceptions::error::Error;
 use crate::api::user::request::UserUpdateRequest;
+use crate::extractors::filter::IntoColumn;
+
+#[derive(Debug, Clone, Deserialize)]
+pub enum UserFields {
+    Id,
+    Firstname,
+    Lastname,
+    Email,
+    IsDeleted,
+    CreatedAt,
+    CreatedBy,
+    UpdatedAt,
+    UpdatedBy,
+}
+
+impl IntoColumn for UserFields {
+    fn into_col(self) -> Column {
+        match self {
+            UserFields::Id => Column::Id,
+            UserFields::Firstname => Column::FirstName,
+            UserFields::Lastname => Column::LastName,
+            UserFields::Email => Column::Email,
+            UserFields::IsDeleted => Column::IsDeleted,
+            UserFields::CreatedAt => Column::CreatedAt,
+            UserFields::CreatedBy => Column::CreatedBy,
+            UserFields::UpdatedAt => Column::UpdatedAt,
+            UserFields::UpdatedBy => Column::UpdatedBy,
+        }
+    }
+}
 
 pub trait UpdateUser: Sized {
     async fn update(self, db: &DatabaseConnection, body: UserUpdateRequest, updated_by: Option<String>) -> Result<Self, Error>;

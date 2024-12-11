@@ -12,6 +12,9 @@ use actix_web::{HttpResponse, Responder};
 use tracing::instrument;
 use permission::resource::Resource;
 use permission::user::UserPermission;
+use crate::entity::user::UserFields;
+use crate::extractors::filter::Filter;
+use crate::extractors::pagination::Pagination;
 
 pub struct UserRoute;
 
@@ -30,15 +33,15 @@ impl UserRoute {
         Ok(UserResponse::new(user))
     }
 
-    #[instrument(skip(session))]
-    pub async fn delete_user(session: AuthSession, path: Path<String>) -> impl Responder {
+    #[instrument(skip(_session))]
+    pub async fn delete_user(_session: AuthSession, _path: Path<String>) -> impl Responder {
         ""
     }
 
-    #[instrument(skip(_session))]
-    pub async fn list_user(_session: AuthSession, _db: DbReq) -> Result<UserListResponse, Error> {
-        //let _users = UserDomain::list_user(session, db.into_inner()).await?;
-        todo!()
+    #[instrument(skip(session))]
+    pub async fn query(session: AuthSession, filter: Filter<UserFields>, pag: Pagination) -> Result<UserListResponse, Error> {
+        let users = UserDomain::query(&session, filter).await?;
+        Ok(UserListResponse::new(users))
     }
 
     #[instrument(skip(session, body))]
@@ -61,7 +64,7 @@ impl Route for UserRoute {
     fn route(cfg: &mut actix_web::web::ServiceConfig) {
         cfg.service(
             scope("/user")
-                .route("", get().to(UserRoute::list_user))
+                .route("", post().to(UserRoute::query))
                 .route("{id}", put().to(UserRoute::update_user))
                 .route("{id}", get().to(UserRoute::get_user))
                 .route("{id}", delete().to(UserRoute::delete_user))
