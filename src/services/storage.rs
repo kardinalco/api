@@ -5,6 +5,7 @@ use s3::{Bucket, Region};
 use s3::creds::Credentials;
 use sea_orm::DatabaseConnection;
 use tokio::fs::File;
+use tracing::instrument;
 use uuid::{Uuid};
 use crate::exceptions::error::Error;
 use crate::exceptions::settings::SettingsError;
@@ -14,6 +15,8 @@ use crate::utils::settings::Settings;
 pub struct StorageService;
 
 impl StorageService {
+    
+    #[instrument(skip(db, cache))]
     async fn get_bucket(db: &DatabaseConnection, cache: &Pool<RedisConnectionManager>, bucket_name: &str) -> Result<Box<Bucket>, Error> {
         let settings = Settings::<settings::bucket::Bucket>::new(cache, db).await?.into_inner();
         let region = Region::Custom {
@@ -26,6 +29,7 @@ impl StorageService {
         Ok(Bucket::new(bucket_name, region, credentials?)?.with_path_style())
     }
 
+    #[instrument(skip(db, cache))]
     pub async fn upload_user_profile_picture(db: &DatabaseConnection, cache: &Pool<RedisConnectionManager>, file: TempFile) -> Result<String, Error> {
         let bucket = Self::get_bucket(db, cache, "user-profiles").await?;
         let mut async_file = File::open(file.file.path()).await?;
@@ -36,7 +40,8 @@ impl StorageService {
         };
         Ok(code)
     }
-    
+
+    #[instrument(skip(db, cache))]
     pub async fn delete_user_profile_picture(db: &DatabaseConnection, cache: &Pool<RedisConnectionManager>, code: &str) -> Result<(), Error> {
         let bucket = Self::get_bucket(db, cache, "user-profiles").await?;
         bucket.delete_object(code).await?;

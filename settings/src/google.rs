@@ -1,10 +1,12 @@
 use serde::{Deserialize, Serialize};
+use derive_more::Debug;
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Google {
     enabled: bool,
     url: GoogleUrl,
     client_id: String,
+    #[debug(skip)]
     client_secret: String,
     redirect_uri: String,
     scope: String,

@@ -3,12 +3,14 @@ use crate::exceptions::entity::EntityError;
 use crate::exceptions::error::Error;
 use entity::user::{Entity, Model};
 use sea_orm::{DatabaseConnection, EntityTrait};
+use tracing::instrument;
 use permission::resource::Resource;
 use permission::user::UserPermission;
 use crate::entity::user::{UpdateUser, UserFields};
 use crate::extractors::auth_session::AuthSession;
 use crate::extractors::filter::{Filter};
-use crate::services::entity::WithFilter;
+use crate::extractors::pagination::Pagination;
+use crate::services::entity::{WithFilter, WithPagination};
 use crate::services::storage::StorageService;
 
 pub struct UserDomain;
@@ -65,9 +67,11 @@ impl UserDomain {
         }
     }
 
-    pub async fn query(session: &AuthSession, filter: Filter<UserFields>) -> Result<Vec<Model>, Error> {
+    #[instrument(name = "user::domain::query", skip(session))]
+    pub async fn query(session: &AuthSession, filter: Filter<UserFields>, pagination: Pagination) -> Result<Vec<Model>, Error> {
         Ok(Entity::find()
             .with_filter(filter)
+            .with_pagination(pagination)
             .all(&session.db).await?)
     }
     

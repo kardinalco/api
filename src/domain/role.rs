@@ -78,6 +78,7 @@ impl RoleDomain {
         }
     }
 
+    #[instrument(skip(db, cache, user))]
     pub async fn add_user_to_default_role(db: &DatabaseConnection, cache: &Pool<RedisConnectionManager>, user: &user::Model) -> Result<(), Error> {
         let settings = Settings::<Global>::new(cache, db).await?.into_inner();
         let role = Self::find_role_by_name(db, settings.get_default_role_name()).await?;

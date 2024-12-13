@@ -107,6 +107,15 @@ services:
         - /etc/localtime:/etc/localtime:ro
         - ./nginx/htmlnginx/html/.well-known:/opt/www/.well-known
         - ./data:/data
+    jaeger:
+      container_name: jaeger
+      image: jaegertracing/jaeger:2.1.0
+      ports:
+        - "16686:16686"
+        - "4317:4317"
+        - "4318:4318"
+        - "5778:5778"
+        - "9411:9411"
 volumes:
   db_data:
   cache_date:

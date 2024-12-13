@@ -34,7 +34,7 @@ impl AuthRoute {
         Ok(AuthVerifyResponse::new(user))
     }
 
-    #[instrument(skip(auth_session))]
+    #[instrument]
     async fn logout(auth_session: AuthSession) -> Result<HttpResponse, Error> {
         AuthDomain::logout(auth_session).await?;
         Ok(HttpResponse::new(StatusCode::OK))

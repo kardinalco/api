@@ -3,6 +3,7 @@ use actix_web::ResponseError;
 use serde::Serialize;
 use serde_json::json;
 use thiserror::Error;
+use tracing::error;
 
 #[derive(Error, Debug, Serialize)]
 pub enum RequestError {
@@ -32,6 +33,7 @@ impl ResponseError for RequestError {
 
 impl From<reqwest::Error> for RequestError {
     fn from(err: reqwest::Error) -> Self {
+        error!("ReqwestError: {:?}", err);
         RequestError::Internal(err.to_string())
     }
 }

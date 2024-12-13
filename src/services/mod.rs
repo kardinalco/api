@@ -4,6 +4,5 @@ pub mod entity;
 pub mod google;
 pub mod hash;
 pub mod permission;
-pub mod rbac;
 pub mod mail;
 pub mod storage;

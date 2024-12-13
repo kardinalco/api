@@ -11,32 +11,37 @@ permission = {path = "permission"}
 actix = {version = "0.13.5"}
 actix-web = {version = "4.9.0", features = []}
 serde_json = {version = "1.0.133"}
-serde = {version = "1.0.215", features = ["derive"]}
-bb8 = "0.8.6"
-bb8-redis = "0.17.0"
-chrono = {version = "0.4.38", features = ["serde"]}
-redis = {version = "0.27.5", features = ["serde", "uuid", "tokio-comp", "json"]}
+serde = {version = "1.0.216", features = ["derive"]}
+bb8 = "0.9.0"
+bb8-redis = "0.18.0"
+chrono = {version = "0.4.39", features = ["serde"]}
+redis = {version = "0.27.6", features = ["serde", "uuid", "tokio-comp", "json"]}
 base64 = {version = "0.22.1"}
 
 validator = {version = "0.19.0", features = ["derive"]}
-thiserror = {version = "2.0.3"}
+thiserror = {version = "2.0.6"}
 bcrypt = {version = "0.16.0"}
 actix-cors = {version = "0.7.0"}
-tracing = {version = "0.1.40", features = []}
+
+tracing-actix-web = {version = "0.7.15", features = ["opentelemetry_0_27", "emit_event_on_error"]}
+actix-web-opentelemetry = {version = "0.19.0", features = ["opentelemetry-prometheus", "metrics", "metrics-prometheus", "prometheus"]}
+tracing = {version = "0.1.41", features = []}
+opentelemetry-otlp = {version = "0.27.0", features = ["grpc-tonic", "serialize"]}
+tracing-bunyan-formatter = "0.3.10"
 tracing-appender = {version = "0.2.3"}
-tracing-subscriber = {version = "0.3.18", features = ["std", "serde_json", "serde", "local-time", "chrono", "fmt", "env-filter"]}
+tracing-subscriber = {version = "0.3.19", features = ["std", "serde_json", "serde", "local-time", "chrono", "fmt", "env-filter", "registry"] }
 tracing-opentelemetry = {version = "0.28.0", features = ["thiserror"]}
-opentelemetry_sdk = {version = "0.27.0", features = ["trace"]}
-opentelemetry = { version = "0.27.0", features = ["trace"] }
+opentelemetry_sdk = {version = "0.27.1", features = ["trace", "rt-tokio"]}
+opentelemetry = { version = "0.27.1", features = ["trace"]}
 opentelemetry-stdout = {version = "0.27.0"}
 
-sea-orm = { version = "1.1.1", features = ["sqlx-postgres", "runtime-tokio-rustls", "macros", "with-chrono", "with-json"] }
+sea-orm = { version = "1.1.2", features = ["sqlx-postgres", "runtime-tokio-rustls", "macros", "with-chrono", "with-json"] }
 reqwest = { version = "0.12.9", features = ["json"] }
 actix-session = {version = "0.10.1", features = ["redis-pool", "redis-session"]}
 config = { version = "0.14.1" }
 cuid2 = "0.1.3"
 uuid = {version = "1.11.0", features = ["serde", "v4"] }
-anyhow = { version = "1.0.93" }
+anyhow = { version = "1.0.94" }
 casbin = { version = "2.5.0"}
 async-trait = "0.1"
 
@@ -44,5 +49,7 @@ futures-util = "0.3.31"
 rust-s3 = {version = "0.36.0-beta.2"}
 actix-multipart = {version = "0.7.2", features = ["derive"]}
 mime = {version = "0.3.17"}
-tokio = {version = "1.15.0"}
-sea-query = "0.32.0"
+tokio = {version = "1.42.0"}
+sea-query = "0.32.1"
+
+derive_more = {version = "1.0.0", features = ["debug"]}

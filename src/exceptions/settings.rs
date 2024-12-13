@@ -6,6 +6,7 @@ use s3::creds::error::CredentialsError;
 use s3::error::S3Error;
 use serde::Serialize;
 use serde_json::json;
+use tracing::error;
 
 #[derive(Debug, thiserror::Error, Serialize)]
 #[error("...")]
@@ -31,6 +32,7 @@ impl ResponseError for SettingsError {
 
 impl From<ConfigError> for SettingsError {
     fn from(value: ConfigError) -> Self {
+        error!("ConfigError: {:?}", value);
         match value {
             ConfigError::NotFound(a) => Self::MissingConfiguration(a),
             ConfigError::Message(a) => Self::MissingConfiguration(a),
@@ -56,6 +58,7 @@ impl From<CredentialsError> for SettingsError {
 
 impl From<S3Error> for SettingsError {
     fn from(value: S3Error) -> Self {
+        error!("S3Error: {:?}", value);
         match value {
             _ => {
                 println!("{:?}", value);

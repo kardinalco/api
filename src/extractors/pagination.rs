@@ -4,6 +4,7 @@ use actix_web::{FromRequest, HttpRequest};
 use actix_web::dev::Payload;
 use actix_web::web::{Query};
 use serde::Deserialize;
+use tracing::instrument;
 
 const DEFAULT_PAGE: u64 = 1;
 const DEFAULT_PER_PAGE: u64 = 30;
@@ -51,6 +52,7 @@ impl FromRequest for Pagination {
     type Error = actix_web::Error;
     type Future = Pin<Box<dyn Future<Output = Result<Self, Self::Error>>>>;
 
+    #[instrument(level = "info", name = "pagination::from_request", skip(req))]
     fn from_request(req: &HttpRequest, _: &mut Payload) -> Self::Future {
         let request = req.clone();
         Box::pin(async move {

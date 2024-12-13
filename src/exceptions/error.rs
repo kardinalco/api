@@ -16,6 +16,7 @@ use s3::error::S3Error;
 use sea_orm::DbErr;
 use serde::Serialize;
 use serde_json::json;
+use tracing::error;
 
 #[derive(Debug, thiserror::Error, Serialize)]
 #[error("...")]
@@ -86,13 +87,15 @@ impl Responder for Error {
 }
 
 impl From<bcrypt::BcryptError> for Error {
-    fn from(_: bcrypt::BcryptError) -> Self {
+    fn from(value: bcrypt::BcryptError) -> Self {
+        error!("BcryptError: {:?}", value);
         Error::Hash
     }
 }
 
 impl From<DbErr> for Error {
     fn from(e: DbErr) -> Self {
+        error!("DbErr: {:?}", e);
         Error::Database(DatabaseError::from(e))
     }
 }
@@ -104,44 +107,50 @@ impl From<actix_web::Error> for Error {
 }
 
 impl From<SessionInsertError> for Error {
-    fn from(_: SessionInsertError) -> Self {
+    fn from(value: SessionInsertError) -> Self {
+        error!("SessionInsertError: {:?}", value);
         Error::Auth(CannotCreateUserSession)
     }
 }
 
 impl From<SessionGetError> for Error {
-    fn from(_: SessionGetError) -> Self {
+    fn from(value: SessionGetError) -> Self {
+        error!("SessionGetError: {:?}", value);
         Error::Auth(CannotCreateUserSession)
     }
 }
 
 impl From<std::io::Error> for Error {
     fn from(e: std::io::Error) -> Self {
+        error!("IoError: {:?}", e);
         Error::InternalServer(e.to_string())
     }
 }
 
 impl From<anyhow::Error> for CacheError {
     fn from(v: anyhow::Error) -> Self {
+        error!("AnyhowError: {:?}", v);
         CacheError::ConnectionError(v.to_string())
     }
 }
 
 impl From<RunError<RedisError>> for Error {
-    fn from(_value: RunError<RedisError>) -> Self {
-        todo!()
+    fn from(value: RunError<RedisError>) -> Self {
+        error!("RunError: {:?}", value);
+        Error::InternalServer(value.to_string())
     }
 }
 
 impl From<anyhow::Error> for Error {
     fn from(value: anyhow::Error) -> Self {
-        println!("cd {:?}", value);
-        todo!()
+        error!("AnyhowError: {:?}", value);
+        Error::InternalServer(value.to_string())
     }
 }
 
 impl From<RedisError> for Error {
     fn from(value: RedisError) -> Self {
+        error!("RedisError: {:?}", value);
         match value.kind() {
             redis::ErrorKind::TypeError => Error::InternalServer("Cannot parse value".to_string()),
             _ => Error::InternalServer("Unknown error".to_string()),

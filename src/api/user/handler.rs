@@ -38,9 +38,10 @@ impl UserRoute {
         ""
     }
 
-    #[instrument(skip(session))]
+    #[instrument(level = "info", name = "user::handler::query", skip(session))]
     pub async fn query(session: AuthSession, filter: Filter<UserFields>, pag: Pagination) -> Result<UserListResponse, Error> {
-        let users = UserDomain::query(&session, filter).await?;
+        session.enforce_or(vec![Resource::User(UserPermission::Read), Resource::User(UserPermission::ReadSelf)]).await?;
+        let users = UserDomain::query(&session, filter, pag).await?;
         Ok(UserListResponse::new(users))
     }
 

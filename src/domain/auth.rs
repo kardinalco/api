@@ -38,6 +38,7 @@ impl AuthDomain {
         Ok(user)
     }
 
+    #[instrument(skip(session, password))]
     pub fn insert_session(session: &Session, user: entity::user::Model, password: String) -> Result<(), Error> {
         if !bcrypt::verify(&password, user.password.as_str())? {
             return Err(AuthenticateError::WrongCredentials.into());
@@ -83,7 +84,7 @@ impl AuthDomain {
         }
     }
 
-    #[instrument(skip(auth_session), fields(user_id = %auth_session.user.id))]
+    #[instrument]
     pub async fn logout(auth_session: AuthSession) -> Result<(), Error> {
         auth_session.session.remove("user_id");
         Ok(())

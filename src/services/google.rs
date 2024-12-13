@@ -1,6 +1,7 @@
 use crate::exceptions::request::RequestError;
 use serde::Deserialize;
 use settings::google::Google;
+use tracing::instrument;
 
 pub struct GoogleService;
 
@@ -24,6 +25,7 @@ pub struct GoogleUserInfoResponse {
 }
 
 impl GoogleService {
+    #[instrument]
     pub async fn login(google: &Google, code: &str) -> Result<GoogleTokenResponse, RequestError> {
         let params = [
             ("code", code),

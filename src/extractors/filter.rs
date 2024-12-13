@@ -8,6 +8,7 @@ use sea_query::Expr;
 use sea_query::extension::postgres::PgExpr;
 use serde::{Deserialize};
 use serde::de::DeserializeOwned;
+use tracing::instrument;
 use crate::exceptions::error::Error;
 
 #[derive(Debug, Clone, Deserialize)]
@@ -81,6 +82,7 @@ impl<T: IntoColumn + DeserializeOwned + 'static> FromRequest for Filter<T> {
     type Error = actix_web::Error;
     type Future = Pin<Box<dyn Future<Output = Result<Self, Self::Error>>>>;
 
+    #[instrument(level = "info", name = "filter::from_request", skip(req, payload))]
     fn from_request(req: &HttpRequest, payload: &mut Payload) -> Self::Future {
         let json_extract = Json::<Option<CompositeCondition<T>>>::from_request(req, payload);
         Box::pin(async move {

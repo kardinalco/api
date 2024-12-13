@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 
+use actix_cors::Cors;
 use crate::api::auth::handler::AuthRoute;
 use crate::utils::route::Route;
 use actix_session::config::PersistentSession;
@@ -26,6 +27,7 @@ use crate::api::permission::handler::PermissionRoute;
 use actix_web::cookie::time::Duration;
 use actix_web::cookie::Key;
 use actix_web::middleware::{NormalizePath, TrailingSlash};
+use tracing_actix_web::TracingLogger;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -36,6 +38,8 @@ async fn main() -> std::io::Result<()> {
     
     HttpServer::new(move || {
         App::new()
+            .wrap(TracingLogger::default()) // Ajoute le middleware de tracing
+            .wrap(Cors::default())
             .wrap(SessionMiddleware::builder(
                     state.session_store.clone(),
                     Key::from(state.settings.keys.session.as_bytes())).session_lifecycle(PersistentSession::default().session_ttl(Duration::seconds(60 * 60 * 24 * 2)))
