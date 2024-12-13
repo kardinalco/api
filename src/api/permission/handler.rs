@@ -14,26 +14,19 @@ pub struct PermissionRoute;
 
 impl PermissionRoute {
 
-    #[instrument(skip(session))]
+    #[instrument(name = "handler::get")]
     pub async fn get(session: AuthSession, path: Path<String>) -> Result<Response<Permission>, Error> {
         session.enforce(Resource::Permission(Permissions::Read)).await?;
         let permission = PermissionDomain::find_permission_by_id(&session.db, &path).await?;
         Ok(Response::Ok(permission.into()))
     }
 
-    #[instrument(skip(session))]
+    #[instrument(name = "handler::list")]
     pub async fn list(session: AuthSession, pag: Pagination) -> Result<Response<Vec<Permission>>, Error> {
         session.enforce(Resource::Permission(Permissions::List)).await?;
         let permissions = PermissionDomain::list(&session.db, pag).await?;
         Ok(Response::Ok(permissions.into_iter().map(|p| p.into()).collect()))
     }
-    
-    #[instrument(skip(session))]
-    pub async fn update(session: AuthSession, path: Path<String>) -> Result<String, Error> {
-        session.enforce(Resource::Permission(Permissions::Update)).await?;
-        Ok("".to_string())
-    }
-    
 }
 
 impl Route for PermissionRoute {

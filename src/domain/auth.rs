@@ -17,15 +17,16 @@ use redis::AsyncCommands;
 use sea_orm::ActiveValue::Set;
 use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, IntoActiveModel, QueryFilter};
 use settings::google::Google;
-use tracing::instrument;
+use tracing::{info, instrument};
 use crate::domain::mail::MailDomain;
-use crate::entity::user::UpdateUser;
-use crate::services::hash::hash;
+use crate::entity::user::{CreateUser, UpdateUser};
+use crate::services::hash::{compare, hash};
 
 pub struct AuthDomain;
 
 impl AuthDomain {
-    #[instrument(skip(body, db, session))]
+
+    #[instrument(name = "domain::login", skip(body, db, session))]
     pub async fn login(body: AuthLoginRequest, db: DatabaseConnection, session: Session) -> Result<entity::user::Model, Error> {
         let user = User::find()
             .filter(Email.eq(body.email.clone()))
@@ -38,16 +39,18 @@ impl AuthDomain {
         Ok(user)
     }
 
-    #[instrument(skip(session, password))]
+    #[instrument(name = "domain::insert_session", skip(session, password))]
     pub fn insert_session(session: &Session, user: entity::user::Model, password: String) -> Result<(), Error> {
-        if !bcrypt::verify(&password, user.password.as_str())? {
+        info!("compare user password");
+        if !compare(&password, user.password.as_str())? {
             return Err(AuthenticateError::WrongCredentials.into());
         }
+        info!("insert user id into session");
         session.insert("user_id", user.id.clone())?;
         Ok(())
     }
 
-    #[instrument(skip(body, db, cache))]
+    #[instrument(name = "domain::register", skip(body, db, cache))]
     pub async fn register(body: AuthRegisterRequest, db: DatabaseConnection, cache: Pool<RedisConnectionManager>) -> Result<(), Error> {
         let user = User::find()
             .filter(Email.eq(body.email.clone()))
@@ -56,14 +59,14 @@ impl AuthDomain {
         if let Some(_) = user {
             return Err(AuthenticateError::UserAlreadyRegistered.into());
         }
-        let user = body.hash_password()?.into_model().insert(&db).await?;
+        let user = entity::user::Entity::create(&db, body, None).await?;
         RoleDomain::add_user_to_default_role(&db, &cache, &user).await?;
         let email_id = MailDomain::registered_user(&db, &cache, &user).await?;
         user.update_mail(&db, email_id, None).await?;
         Ok(())
     }
 
-    #[instrument(skip(db, cache))]
+    #[instrument(name = "domain::verify_user", skip(db, cache))]
     pub async fn verify_user(db: &DatabaseConnection, cache: &Pool<RedisConnectionManager>, code: &str) -> Result<entity::user::Model, Error> {
         let user_id = cache.get().await?.get::<&str, String>(code).await.map_err(|_| Error::Auth(AuthenticateError::InvalidCode))?;
         let user = User::find()
@@ -84,13 +87,13 @@ impl AuthDomain {
         }
     }
 
-    #[instrument]
+    #[instrument(name = "domain::logout")]
     pub async fn logout(auth_session: AuthSession) -> Result<(), Error> {
         auth_session.session.remove("user_id");
         Ok(())
     }
 
-    #[instrument(skip(db, cache))]
+    #[instrument(name = "domain::build_google_auth_url", skip(db, cache))]
     pub async fn build_google_auth_url(db: &DatabaseConnection, cache: &Pool<RedisConnectionManager>) -> Result<String, Error> {
         let google_auth = Settings::<Google>::new(cache, db).await?.into_inner();
         if !google_auth.is_enabled() {
@@ -98,8 +101,8 @@ impl AuthDomain {
         }
         Ok(google_auth.build_authorize_url())
     }
-    
-    #[instrument(skip(db, cache))]
+
+    #[instrument(name = "domain::forgot_password", skip(db, cache))]
     pub async fn forgot_password(db: &DatabaseConnection, cache: &Pool<RedisConnectionManager>, email: &str) -> Result<(), Error> {
         let user = User::find().filter(Email.eq(email)).one(db).await?;
         if let Some(user) = user {
@@ -107,7 +110,8 @@ impl AuthDomain {
         }
         Ok(())
     }
-    
+
+    #[instrument(name = "domain::reset_password", skip(db, cache))]
     pub async fn reset_password(db: &DatabaseConnection, cache: &Pool<RedisConnectionManager>, body: &AuthResetPasswordRequest) -> Result<(), Error> {
         let user_id = cache.get().await?.get::<&str, String>(&body.code).await.map_err(|_| Error::Auth(AuthenticateError::InvalidCode))?;
         let user = User::find().filter(entity::user::Column::Id.eq(user_id)).one(db).await?;
@@ -121,7 +125,7 @@ impl AuthDomain {
         }
     }
 
-    #[instrument(skip(db, cache, session))]
+    #[instrument(name = "domain::login_with_google", skip(db, cache, session))]
     pub async fn login_with_google(db: &DatabaseConnection, cache: &Pool<RedisConnectionManager>, session: &Session, code: &str) -> Result<entity::user::Model, Error> {
         let google_auth = Settings::<Google>::new(cache, db).await?.into_inner();
         if !google_auth.is_enabled() {

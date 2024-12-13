@@ -16,53 +16,52 @@ use tracing::instrument;
 pub struct AuthRoute;
 
 impl AuthRoute {
-    #[instrument(skip(s, body, db))]
+    #[instrument(name = "handler::login", skip(s, body, db))]
     async fn login(body: Dto<AuthLoginRequest>, s: Session, db: DbReq) -> Result<AuthLoginResponse, Error> {
         let user = AuthDomain::login(body.into_inner(), db.into_inner(), s).await?;
         Ok(AuthLoginResponse::new(user))
     }
 
-    #[instrument(skip(body, db, cache))]
+    #[instrument(name = "handler::register", skip(body, db, cache))]
     async fn register(body: Dto<AuthRegisterRequest>, db: DbReq, cache: Cache) -> Result<AuthRegisterResponse, Error> {
         AuthDomain::register(body.into_inner(), db.into_inner(), cache.into_inner()).await?;
         Ok(AuthRegisterResponse { message: "User registered successfully" })
     }
 
-    #[instrument(skip(body, db, cache))]
+    #[instrument(name = "handler::verify", skip(body, db, cache))]
     async fn verify(db: DbReq, cache: Cache, body: Dto<AuthVerifyRequest>) -> Result<AuthVerifyResponse, Error> {
         let user = AuthDomain::verify_user(&db.into_inner(), &cache.into_inner(), &body.into_inner().code).await?;
         Ok(AuthVerifyResponse::new(user))
     }
 
-    #[instrument]
+    #[instrument(name = "handler::logout")]
     async fn logout(auth_session: AuthSession) -> Result<HttpResponse, Error> {
         AuthDomain::logout(auth_session).await?;
         Ok(HttpResponse::new(StatusCode::OK))
     }
 
-    #[instrument(skip(body, db, cache))]
+    #[instrument(name = "handler::forgot_password", skip(body, db, cache))]
     async fn forgot_password(db: DbReq, cache: Cache, body: Dto<AuthForgotPasswordRequest>) -> Result<HttpResponse, Error> {
         AuthDomain::forgot_password(&db.into_inner(), &cache.into_inner(), &body.into_inner().email).await?;
         Ok(HttpResponse::new(StatusCode::OK))
     }
 
-    #[instrument(skip(body, db, cache))]
+    #[instrument(name = "handler::reset_password", skip(body, db, cache))]
     async fn reset_password(db: DbReq, cache: Cache, body: Dto<AuthResetPasswordRequest>) -> Result<HttpResponse, Error> {
         AuthDomain::reset_password(&db.into_inner(), &cache.into_inner(), &body.into_inner()).await?;
         Ok(HttpResponse::new(StatusCode::OK))
     }
 
-    #[instrument(skip(db, cache))]
+    #[instrument(name = "handler::get_google_login_url", skip(db, cache))]
     async fn get_google_login_url(db: DbReq, cache: Cache) -> Result<GoogleGetUrlResponse, Error> {
-        let result =
-            AuthDomain::build_google_auth_url(&db.into_inner(), &cache.into_inner()).await?;
+        let result = AuthDomain::build_google_auth_url(&db.into_inner(), &cache.into_inner()).await?;
         Ok(GoogleGetUrlResponse::new(
             "Google login url".to_string(),
             result,
         ))
     }
 
-    #[instrument(skip(db, cache, s))]
+    #[instrument(name = "handler::google_login", skip(db, cache, s))]
     async fn google_login(db: DbReq, cache: Cache, s: Session, body: Dto<AuthLoginWithGoogleRequest>) -> Result<GoogleLoginResponse, Error> {
         let user = AuthDomain::login_with_google(&db.into_inner(), &cache.into_inner(), &s, &body.into_inner().code).await?;
         Ok(GoogleLoginResponse::new(user))

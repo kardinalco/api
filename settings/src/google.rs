@@ -6,7 +6,7 @@ pub struct Google {
     enabled: bool,
     url: GoogleUrl,
     client_id: String,
-    #[debug(skip)]
+    #[debug("*******")]
     client_secret: String,
     redirect_uri: String,
     scope: String,
@@ -23,7 +23,7 @@ impl Default for Google {
             client_id: String::new(),
             client_secret: String::new(),
             redirect_uri: String::new(),
-            scope: String::from("https://www.googleapis.com/auth/userinfo.email"),
+            scope: String::from("https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email"),
             response_type: String::from("code"),
             grant_type: String::from("authorization_code"),
             access_type: String::from("offline"),

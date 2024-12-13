@@ -1,3 +1,4 @@
+use std::fmt::Debug;
 use crate::exceptions::error::Error;
 use bb8::Pool;
 use bb8_redis::RedisConnectionManager;
@@ -8,8 +9,9 @@ use sea_orm::{
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use serde_json::json;
+use tracing::instrument;
 
-pub trait CachedSettings: Sized + DeserializeOwned + Serialize + FromRedisValue + Send + Sync {
+pub trait CachedSettings: Sized + DeserializeOwned + Serialize + FromRedisValue + Send + Sync + Debug {
     fn get_key<'a>() -> &'a str;
 
     fn get_ttl(&self) -> i64 {
@@ -27,11 +29,13 @@ pub trait CachedSettings: Sized + DeserializeOwned + Serialize + FromRedisValue 
         }
     }
 
+    #[instrument(skip(redis))]
     async fn get_from_cache(redis: &Pool<RedisConnectionManager>) -> Result<Option<Self>, Error> {
         let mut a = redis.get().await?;
         Ok(a.json_get::<_, &str, Option<Self>>(Self::get_key(), ".").await.unwrap_or(None))
     }
 
+    #[instrument(skip(db))]
     async fn get_from_db(db: &DatabaseConnection) -> Result<Self, Error> {
         let result = entity::settings::Entity::find()
             .filter(entity::settings::Column::Name.eq(Self::get_key()))
@@ -52,6 +56,7 @@ pub trait CachedSettings: Sized + DeserializeOwned + Serialize + FromRedisValue 
         })?)
     }
 
+    #[instrument(skip(db))]
     async fn update_to_db(&self, db: &DatabaseConnection) -> Result<(), Error> {
         let settings = entity::settings::Entity::find()
             .filter(entity::settings::Column::Name.eq(Self::get_key()))
@@ -71,6 +76,7 @@ pub trait CachedSettings: Sized + DeserializeOwned + Serialize + FromRedisValue 
         Ok(())
     }
 
+    #[instrument(skip(redis))]
     #[allow(dependency_on_unit_never_type_fallback)]
     async fn save_to_cache(&self, redis: &Pool<RedisConnectionManager>) -> Result<(), Error> {
         let mut conn = redis.get().await?;

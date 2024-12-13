@@ -42,7 +42,7 @@ async fn main() -> std::io::Result<()> {
             .wrap(Cors::default())
             .wrap(SessionMiddleware::builder(
                     state.session_store.clone(),
-                    Key::from(state.settings.keys.session.as_bytes())).session_lifecycle(PersistentSession::default().session_ttl(Duration::seconds(60 * 60 * 24 * 2)))
+                    Key::from(state.settings.session_key.as_bytes())).session_lifecycle(PersistentSession::default().session_ttl(Duration::seconds(60 * 60 * 24 * 2)))
                 .build())
             .app_data(Data::new(state.clone()))
             .configure(AuthRoute::route)

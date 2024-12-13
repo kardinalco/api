@@ -17,7 +17,7 @@ use tracing::log;
 use tracing_opentelemetry::OpenTelemetryLayer;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
-use tracing_subscriber::{fmt, EnvFilter};
+use tracing_subscriber::{fmt, EnvFilter, Layer};
 
 #[derive(Clone)]
 pub struct AppState {
@@ -32,11 +32,11 @@ impl AppState {
     pub async fn new() -> Result<Self, Error> {
         let config = Config::new()?;
         Self::initialize_logger(&config);
-        let cache = build_cache(&config.redis.url).await?;
-        let db = build_db(&config.database.url).await?;
+        let cache = build_cache(&config.redis_url).await?;
+        let db = build_db(&config.database_url).await?;
         Ok(Self {
             permission: build_permission(db.clone(), cache.clone()),
-            session_store: build_redis_session_store(&config.redis.url).await?,
+            session_store: build_redis_session_store(&config.redis_url).await?,
             cache,
             db,
             settings: config,
@@ -46,10 +46,9 @@ impl AppState {
     pub fn initialize_logger(settings: &Config) {
         let exporter = opentelemetry_otlp::SpanExporter::builder()
             .with_tonic()
-            .with_endpoint("http://localhost:4317")
+            .with_endpoint(&settings.opentelemetry_url)
             .with_timeout(Duration::from_secs(3))
             .build().unwrap();
-
         let tracer_provider = opentelemetry_sdk::trace::TracerProvider::builder()
             .with_batch_exporter(exporter, opentelemetry_sdk::runtime::Tokio)
             .with_resource(opentelemetry_sdk::Resource::new(vec![
@@ -58,16 +57,14 @@ impl AppState {
             .with_sampler(Sampler::AlwaysOn)
             .build();
         let tracer = tracer_provider.tracer("kardinal");
-        let fmt_layer = fmt::layer();
-
+        let fmt_layer = fmt::layer()
+            .with_filter(EnvFilter::from_str(&settings.clone().log.as_str()).unwrap());
         tracing_subscriber::registry()
-            .with(OpenTelemetryLayer::new(tracer))
+            .with(OpenTelemetryLayer::new(tracer)
+                .with_filter(EnvFilter::from_str(&settings.clone().log.as_str()).unwrap()))
             .with(fmt_layer)
-            .with(
-                EnvFilter::from_str(&settings.clone().log.level.as_str())
-                    .unwrap_or_else(|_| EnvFilter::new("info")),
-            )
             .init();
+
     }
 }
 
@@ -88,7 +85,7 @@ pub async fn build_db(url: &str) -> Result<DatabaseConnection, DatabaseError> {
     let mut options = ConnectOptions::new(url);
     options.sqlx_logging_level(log::LevelFilter::Info);
     options.max_connections(16);
-    options.connect_lazy(true);
+    options.connect_lazy(false);
     Ok(Database::connect(options).await?)
 }
 

@@ -1,6 +1,9 @@
 use actix_web::body::BoxBody;
 use actix_web::{HttpRequest, HttpResponse, Responder};
 use serde::Serialize;
+use crate::exceptions::error::Error;
+
+pub type ResponseStruct<T> = Result<T, Error>;
 
 pub enum Response<T: Serialize> {
     Ok(T),
@@ -23,3 +26,4 @@ impl<T: Serialize> Responder for Response<T> {
         }
     }
 }
+

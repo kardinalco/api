@@ -3,6 +3,7 @@
 use super::sea_orm_active_enums::RegisteredWith;
 use sea_orm::entity::prelude::*;
 use serde::Deserialize;
+use derive_more::Debug;
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Deserialize)]
 #[sea_orm(table_name = "user")]
@@ -14,6 +15,7 @@ pub struct Model {
     #[sea_orm(unique)]
     pub email: String,
     pub email_id: Option<i32>,
+    #[debug("*******")]
     pub password: String,
     pub is_active: bool,
     pub is_deleted: bool,

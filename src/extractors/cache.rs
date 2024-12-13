@@ -7,6 +7,7 @@ use bb8::Pool;
 use bb8_redis::RedisConnectionManager;
 use std::future::Future;
 use std::pin::Pin;
+use tracing::instrument;
 
 #[derive(Clone)]
 pub struct Cache(Pool<RedisConnectionManager>);
@@ -15,6 +16,7 @@ impl FromRequest for Cache {
     type Error = actix_web::Error;
     type Future = Pin<Box<dyn Future<Output = Result<Self, Self::Error>>>>;
 
+    #[instrument(level = "info", name = "cache::from_request", skip(req))]
     fn from_request(req: &HttpRequest, _: &mut Payload) -> Self::Future {
         let request = req.clone();
         Box::pin(async move {

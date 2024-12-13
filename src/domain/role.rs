@@ -8,7 +8,7 @@ use bb8_redis::RedisConnectionManager;
 use entity::{permission, role, user};
 use sea_orm::sea_query::Expr;
 use sea_orm::ActiveValue::Set;
-use sea_orm::{DatabaseConnection, EntityTrait, ModelTrait, QueryFilter};
+use sea_orm::{DatabaseConnection, EntityTrait, ModelTrait, QueryFilter, QuerySelect};
 use settings::global::Global;
 use tracing::instrument;
 
@@ -63,18 +63,19 @@ impl RoleDomain {
     pub async fn get_roles_and_permissions(db: &DatabaseConnection) -> Result<Vec<(role::Model, Vec<permission::Model>)>, Error> {
         Ok(role::Entity::find()
             .find_with_related(permission::Entity)
+            .columns(vec![role::Column::Id, role::Column::Name, role::Column::Description])
             .all(db)
             .await?)
     }
 
     pub async fn get_user_role(db: &DatabaseConnection, user: &user::Model) -> Result<role::Model, Error> {
-        let role = user.find_related(role::Entity).one(db).await?;
+        let role = user
+            .find_related(role::Entity)
+            .columns(vec![role::Column::Id, role::Column::Name, role::Column::Description])
+            .one(db).await?;
         match role {
             Some(role) => Ok(role),
-            None => Err(Error::Entity(EntityError::NotFound(
-                "UserRole",
-                user.id.to_owned(),
-            ))),
+            None => Err(Error::Entity(EntityError::NotFound("UserRole", user.id.to_owned()))),
         }
     }
 

@@ -2,14 +2,17 @@ use crate::exceptions::request::RequestError;
 use serde::Deserialize;
 use settings::google::Google;
 use tracing::instrument;
+use derive_more::Debug;
 
 pub struct GoogleService;
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct GoogleTokenResponse {
+    #[debug("*******")]
     pub access_token: String,
     pub expires_in: i64,
     pub token_type: String,
+    #[debug("*******")]
     pub refresh_token: Option<String>,
     pub scope: String,
 }
@@ -47,6 +50,7 @@ impl GoogleService {
         }
     }
 
+    #[instrument(skip(access_token))]
     pub async fn get_user(google: &Google, access_token: &str) -> Result<GoogleUserInfoResponse, RequestError> {
         let client = reqwest::Client::new();
         let result = client

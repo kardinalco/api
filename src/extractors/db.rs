@@ -6,6 +6,7 @@ use actix_web::{FromRequest, HttpRequest};
 use sea_orm::DatabaseConnection;
 use std::future::Future;
 use std::pin::Pin;
+use tracing::instrument;
 
 #[derive(Clone, Debug)]
 pub struct DbReq(DatabaseConnection);
@@ -20,6 +21,7 @@ impl FromRequest for DbReq {
     type Error = Error;
     type Future = Pin<Box<dyn Future<Output = Result<Self, Self::Error>>>>;
 
+    #[instrument(level = "info", name = "db::from_request", skip(req))]
     fn from_request(req: &HttpRequest, _: &mut Payload) -> Self::Future {
         let request = req.clone();
         Box::pin(async move {

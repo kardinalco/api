@@ -2,20 +2,6 @@ use serde::{Deserialize, Serialize};
 
 use crate::exceptions::settings::SettingsError;
 
-#[derive(Serialize, Deserialize, Clone, Default)]
-pub struct Database {
-    pub url: String,
-}
-
-#[derive(Serialize, Deserialize, Clone, Default)]
-pub struct Redis {
-    pub url: String,
-}
-
-#[derive(Serialize, Deserialize, Clone, Default)]
-pub struct Log {
-    pub level: LogLevel,
-}
 
 #[derive(Serialize, Deserialize, Clone, Default)]
 pub enum LogLevel {
@@ -44,16 +30,17 @@ pub struct Keys {
 
 #[derive(Serialize, Deserialize, Clone, Default)]
 pub struct Config {
-    pub database: Database,
-    pub log: Log,
-    pub redis: Redis,
-    pub keys: Keys,
+    pub database_url: String,
+    pub log: LogLevel,
+    pub redis_url: String,
+    pub session_key: String,
+    pub opentelemetry_url: String,
 }
 
 impl Config {
     pub fn new() -> Result<Self, SettingsError> {
         Ok(config::Config::builder()
-            .add_source(config::Environment::default().separator("__"))
+            .add_source(config::Environment::default())
             .build()?
             .try_deserialize()?)
     }

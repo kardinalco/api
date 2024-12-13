@@ -48,3 +48,8 @@ impl UploadProfilePictureRequest {
         }
     }
 }
+
+#[derive(Debug, Serialize, Deserialize, Validate)]
+pub struct UserDeleteRequest {
+    pub users: Vec<String>
+}

@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use derive_more::Debug;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Bucket {
@@ -16,6 +17,7 @@ pub struct Region {
 pub struct BucketInfo {
     pub name: String,
     pub user: String,
+    #[debug("*******")]
     pub key: String
 }
 

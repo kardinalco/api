@@ -21,7 +21,7 @@ impl<T: DeserializeOwned + Validate + 'static> FromRequest for Dto<T> {
     type Error = Error;
     type Future = Pin<Box<dyn Future<Output = Result<Self, Self::Error>>>>;
 
-    #[instrument(skip(req, payload))]
+    #[instrument(name = "dto::from_request", skip(req, payload))]
     fn from_request(req: &HttpRequest, payload: &mut Payload) -> Self::Future {
         let json_extract = Json::<T>::from_request(req, payload);
         Box::pin(async move {

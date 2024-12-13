@@ -7,3 +7,4 @@ edition = "2021"
 sea-orm = { version = "1.1.2", features = ["default", "with-json", "with-chrono"] }
 serde = {version = "1.0.216", features = ["derive"]}
 serde_json = {version = "1.0.133"}
+derive_more = {version = "1.0.0", features = ["debug"]}

@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use derive_more::Debug;
 
 #[derive(Debug, Clone, Deserialize, Serialize, Default)]
 pub struct Mail {
@@ -48,6 +49,7 @@ impl Default for Smtp {
 pub struct ListMonk {
     pub api_user: String,
     pub api_host: String,
+    #[debug("*******")]
     pub api_key: String,
     pub templates: ListMonkTemplates,
 }

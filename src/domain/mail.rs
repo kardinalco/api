@@ -5,6 +5,7 @@ use bb8_redis::RedisConnectionManager;
 use chrono::Utc;
 use redis::{AsyncCommands};
 use sea_orm::DatabaseConnection;
+use tracing::instrument;
 use crate::exceptions::error::Error;
 use crate::services::hash::hash;
 use crate::services::mail::{MailService, MailVerification, MailWelcome, PasswordChanged};
@@ -13,6 +14,7 @@ pub struct MailDomain;
 
 impl MailDomain {
 
+    #[instrument(skip(db, cache))]
     pub async fn registered_user(db: &DatabaseConnection, cache: &Pool<RedisConnectionManager>, user: &entity::user::Model) -> Result<i32, Error> {
         let mail = MailService::new(&db, &cache);
         let email_id = mail.create_subscriber(&user.email, &format!("{} {}", user.first_name, user.last_name)).await?;
@@ -24,12 +26,14 @@ impl MailDomain {
         Ok(email_id)
     }
 
+    #[instrument(skip(db, cache))]
     pub async fn welcome_user(db: &DatabaseConnection, cache: &Pool<RedisConnectionManager>, user: &entity::user::Model) -> Result<(), Error> {
         let mail = MailService::new(&db, &cache);
         mail.send_welcome_mail(&user.email.clone(), &MailWelcome {firstname: user.first_name.clone(), lastname: user.last_name.clone()}).await?;
         Ok(())
     }
 
+    #[instrument(skip(db, cache))]
     pub async fn send_reset_password(db: &DatabaseConnection, cache: &Pool<RedisConnectionManager>, user: &entity::user::Model) -> Result<(), Error> {
         let mail = MailService::new(&db, &cache);
         let code = BASE64_STANDARD.encode(cuid2::cuid());
@@ -40,6 +44,7 @@ impl MailDomain {
         Ok(())
     }
 
+    #[instrument(skip(db, cache))]
     pub async fn send_password_changed(db: &DatabaseConnection, cache: &Pool<RedisConnectionManager>, user: &entity::user::Model) -> Result<(), Error> {
         let mail = MailService::new(&db, &cache);
         mail.send_password_changed_mail(&user.email, &PasswordChanged {date: user.updated_at.unwrap_or(Utc::now().naive_utc()), firstname: user.first_name.clone(), lastname: user.last_name.clone()}).await?;

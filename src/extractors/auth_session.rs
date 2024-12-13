@@ -16,7 +16,7 @@ use crate::exceptions::auth::AuthenticateError::NeedSession;
 use crate::exceptions::error::Error;
 use crate::extractors::cache::Cache;
 use crate::extractors::db::DbReq;
-use crate::services::permission::Permission;
+use crate::services::permission::{Permission};
 
 pub struct AuthSession {
     pub user: entity::user::Model,

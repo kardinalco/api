@@ -8,7 +8,7 @@ pub enum UserPermission {
     Read,
     ReadSelf,
     Delete,
-    DeletedSelf,
+    DeleteSelf,
     Update,
     UpdateSelf,
     List,
