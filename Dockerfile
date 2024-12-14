@@ -1,5 +1,5 @@
 # Build stage
-FROM rust:1.82.0-slim-bookworm AS builder
+FROM rust:1.83-bookworm AS builder
 
 RUN apt-get update -y && \
   apt-get install -y pkg-config make g++ libssl-dev && \
@@ -10,7 +10,7 @@ WORKDIR /usr/src/app
 COPY Cargo.toml Cargo.lock ./
 COPY ./entity/Cargo.toml ./entity/Cargo.lock ./entity/
 COPY ./settings/Cargo.toml ./settings/Cargo.lock ./settings/
-COPY ./permissions/Cargo.toml ./permissions/Cargo.lock ./permissions/
+COPY ./permission/Cargo.toml ./permission/Cargo.lock ./permission/
 RUN mkdir -p ./src && echo 'fn main() {}' > ./src/main.rs
 RUN mkdir -p ./entity/src && echo '' > ./entity/src/main.rs
 RUN mkdir -p ./settings/src && echo '' > ./settings/src/main.rs
