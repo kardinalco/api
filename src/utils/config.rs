@@ -35,6 +35,7 @@ pub struct Config {
     pub redis_url: String,
     pub session_key: String,
     pub opentelemetry_url: String,
+    pub magic_key: String
 }
 
 impl Config {
