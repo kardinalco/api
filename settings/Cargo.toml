@@ -7,3 +7,4 @@ edition = "2021"
 serde = {version = "1.0.213", features = ["derive"]}
 serde_json = {version = "1.0.132"}
 derive_more = {version = "1.0.0", features = ["debug"]}
+chrono = {version = "0.4.39", features = ["serde"]}

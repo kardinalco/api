@@ -1,5 +1,3 @@
-use actix_web::{HttpRequest, HttpResponse, Responder};
-use actix_web::body::BoxBody;
 use serde::Serialize;
 use crate::api::credentials::request::Type;
 
@@ -33,43 +31,5 @@ impl Credential {
             deleted_at: model.deleted_at,
             deleted_by: model.deleted_by,
         }
-    }
-}
-
-pub struct GetCredentialResponse(pub Credential);
-pub struct UpdateCredentialResponse(pub Credential);
-pub struct CreateCredentialResponse(pub Credential);
-pub struct DeleteCredentialResponse(pub Credential);
-
-
-impl Responder for GetCredentialResponse {
-    type Body = BoxBody;
-
-    fn respond_to(self, _: &HttpRequest) -> HttpResponse<Self::Body> {
-        HttpResponse::Ok().json(self.0)
-    }
-}
-
-impl Responder for UpdateCredentialResponse {
-    type Body = BoxBody;
-
-    fn respond_to(self, _: &HttpRequest) -> HttpResponse<Self::Body> {
-        HttpResponse::Ok().json(self.0)
-    }
-}
-
-impl Responder for CreateCredentialResponse {
-    type Body = BoxBody;
-
-    fn respond_to(self, _: &HttpRequest) -> HttpResponse<Self::Body> {
-        HttpResponse::Created().json(self.0)
-    }
-}
-
-impl Responder for DeleteCredentialResponse {
-    type Body = BoxBody;
-
-    fn respond_to(self, _: &HttpRequest) -> HttpResponse<Self::Body> {
-        HttpResponse::Ok().json(self.0)
     }
 }

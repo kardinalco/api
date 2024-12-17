@@ -1,44 +1,37 @@
+use crate::entity::entity::{Create, SoftDelete, Update};
 use crate::exceptions::entity::EntityError;
 use crate::exceptions::error::Error;
 use crate::services::cache::CachedSettings;
-use crate::services::entity::{RoleCreatedByUser, WithCreatedByUser};
+use crate::services::entity::{RoleCreatedByUser, WithCreatedByUser, WithPagination};
 use crate::utils::settings::Settings;
 use bb8::Pool;
 use bb8_redis::RedisConnectionManager;
 use entity::{permission, role, user};
+use entity::role::Model;
+use entity::role_permission::ActiveModel;
 use sea_orm::sea_query::Expr;
 use sea_orm::ActiveValue::Set;
-use sea_orm::{DatabaseConnection, EntityTrait, ModelTrait, QueryFilter, QuerySelect};
+use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, ModelTrait, QueryFilter, QuerySelect, TransactionTrait};
 use settings::global::Global;
 use tracing::instrument;
+use crate::api::role::request::{CreateRoleBody, UpdateRole};
+use crate::extractors::auth_session::AuthSession;
+use crate::extractors::pagination::Pagination;
 
 pub struct RoleDomain;
 
-pub trait PermissionTrait {
-    async fn list_permissions(self, db: &DatabaseConnection) -> Result<Vec<permission::Model>, Error>;
-    async fn list_permissions_action(self, db: &DatabaseConnection, action: &str,) -> Result<Vec<permission::Model>, Error>;
-}
-
-impl PermissionTrait for role::Model {
-    #[instrument(skip(db))]
-    async fn list_permissions(self, db: &DatabaseConnection) -> Result<Vec<permission::Model>, Error> {
-        Ok(self.find_related(permission::Entity).all(db).await?)
-    }
-
-    #[instrument(skip(_db))]
-    async fn list_permissions_action(self, _db: &DatabaseConnection, _action: &str) -> Result<Vec<permission::Model>, Error> {
-        todo!()
-    }
-}
-
 impl RoleDomain {
-    #[instrument(skip(db))]
-    pub async fn list_all_roles(db: &DatabaseConnection) -> Result<Vec<role::Model>, Error> {
-        Ok(role::Entity::find().all(db).await?)
+    #[instrument]
+    pub async fn list(db: &DatabaseConnection, pag: Pagination) -> Result<Vec<(Model, Vec<permission::Model>)>, Error> {
+        Ok(role::Entity::find()
+            .find_with_related(permission::Entity)
+            .with_pagination(pag)
+            .all(db)
+            .await?)
     }
 
-    #[instrument(skip(db))]
-    pub async fn find_role_by_id(db: &DatabaseConnection, id: &str) -> Result<role::Model, Error> {
+    #[instrument]
+    pub async fn find_role_by_id(db: &DatabaseConnection, id: &str) -> Result<Model, Error> {
         let a = role::Entity::find_by_id(id)
             .find_with_related(user::Entity)
             .all(db)
@@ -47,8 +40,8 @@ impl RoleDomain {
         todo!()
     }
 
-    #[instrument(skip(db))]
-    pub async fn find_role_by_name(db: &DatabaseConnection, name: &str) -> Result<role::Model, Error> {
+    #[instrument]
+    async fn _find_role_by_name(db: &DatabaseConnection, name: &str) -> Result<Model, Error> {
         let role = role::Entity::find()
             .filter(Expr::col(role::Column::Name).eq(name))
             .with_created_user::<RoleCreatedByUser>()
@@ -60,7 +53,8 @@ impl RoleDomain {
         )))?)
     }
 
-    pub async fn get_roles_and_permissions(db: &DatabaseConnection) -> Result<Vec<(role::Model, Vec<permission::Model>)>, Error> {
+    #[instrument]
+    pub async fn get_roles_and_permissions(db: &DatabaseConnection) -> Result<Vec<(Model, Vec<permission::Model>)>, Error> {
         Ok(role::Entity::find()
             .find_with_related(permission::Entity)
             .columns(vec![role::Column::Id, role::Column::Name, role::Column::Description])
@@ -68,7 +62,8 @@ impl RoleDomain {
             .await?)
     }
 
-    pub async fn get_user_role(db: &DatabaseConnection, user: &user::Model) -> Result<role::Model, Error> {
+    #[instrument]
+    pub async fn get_user_role(db: &DatabaseConnection, user: &user::Model) -> Result<Model, Error> {
         let role = user
             .find_related(role::Entity)
             .columns(vec![role::Column::Id, role::Column::Name, role::Column::Description])
@@ -79,18 +74,62 @@ impl RoleDomain {
         }
     }
 
-    #[instrument(skip(db, cache, user))]
+    #[instrument]
     pub async fn add_user_to_default_role(db: &DatabaseConnection, cache: &Pool<RedisConnectionManager>, user: &user::Model) -> Result<(), Error> {
         let settings = Settings::<Global>::new(cache, db).await?.into_inner();
-        let role = Self::find_role_by_name(db, settings.get_default_role_name()).await?;
+        let role = Self::_find_role_by_name(db, settings.get_default_role_name()).await?;
         entity::user_role::Entity::insert(entity::user_role::ActiveModel {
             user_id: Set(user.id.clone()),
             role_id: Set(role.id.clone()),
             created_at: Set(chrono::Utc::now().naive_utc()),
             ..Default::default()
         })
-        .exec(db)
-        .await?;
+            .exec(db)
+            .await?;
         Ok(())
     }
+
+    #[instrument]
+    pub async fn create(session: AuthSession, body: CreateRoleBody) -> Result<(Model, Vec<permission::Model>), Error> {
+        let tx = session.db.begin().await?;
+        let role = role::Entity::create(&tx, body.clone(), Some(session.user.id)).await?;
+        let permissions = permission::Entity::find()
+            .filter(permission::Column::Id.is_in(body.permissions.clone()))
+            .all(&tx)
+            .await?;
+        entity::role_permission::Entity::insert_many(body.permissions.into_iter().map(|x| {
+            ActiveModel {
+                role_id: Set(role.id.clone()),
+                permission_id: Set(x),
+                created_at: Set(chrono::Utc::now().naive_utc()),
+            }
+        }));
+        tx.commit().await?;
+        Ok((role, permissions))
+    }
+
+    #[instrument]
+    pub async fn delete(session: &AuthSession, id: &str) -> Result<Model, Error> {
+        let role = Self::find_role_by_id(&session.db, id).await?;
+        Ok(role.soft_delete(&session.db, Some(session.user.id.clone())).await?)
+    }
+
+    #[instrument]
+    pub async fn update(session: AuthSession, id: &str, body: UpdateRole) -> Result<Model, Error> {
+        let role = Self::find_role_by_id(&session.db, id).await?;
+        Ok(role.update(&session.db, body, Some(session.user.id.clone())).await?)
+    }
+
+    #[instrument]
+    pub async fn get(db: &DatabaseConnection, id: &str) -> Result<(Model, Vec<permission::Model>), Error> {
+        let roles = role::Entity::find_by_id(id)
+            .filter(role::Column::Id.eq(id))
+            .find_with_related(permission::Entity)
+            .all(db)
+            .await?;
+        roles.get(0)
+            .map(|x| Ok(x.clone()))
+            .unwrap_or_else(|| Err(Error::Entity(EntityError::NotFound("Role", id.to_owned()))))
+    }
+    
 }

@@ -5,10 +5,11 @@ use tracing::instrument;
 use permission::credential::CredentialPermission;
 use permission::resource::Resource;
 use crate::api::credentials::request::{CredentialCreate, CredentialUpdate};
-use crate::api::credentials::response::{CreateCredentialResponse, Credential, DeleteCredentialResponse, GetCredentialResponse, UpdateCredentialResponse};
+use crate::api::credentials::response::{Credential};
 use crate::domain::credential::CredentialDomain;
 use crate::extractors::auth_session::AuthSession;
 use crate::extractors::dto::Dto;
+use crate::utils::response::Response;
 
 pub struct CredentialsRoute;
 
@@ -20,31 +21,31 @@ impl CredentialsRoute {
     }
     
     #[instrument]
-    async fn create_credentials(session: AuthSession, body: Dto<CredentialCreate>) -> Result<CreateCredentialResponse, Error> {
+    async fn create_credentials(session: AuthSession, body: Dto<CredentialCreate>) -> Result<Response<Credential>, Error> {
         session.enforce(Resource::Credential(CredentialPermission::Create)).await?;
         let result = CredentialDomain::create_credentials(&session.db, &session.user.id, body.into_inner()).await?;
-        Ok(CreateCredentialResponse(Credential::from_model(result)))
+        Ok(Response::Created(Credential::from_model(result)))
     }
 
     #[instrument]
-    async fn get_credentials(session: AuthSession, id: Path<String>) -> Result<GetCredentialResponse, Error> {
+    async fn get_credentials(session: AuthSession, id: Path<String>) -> Result<Response<Credential>, Error> {
         session.enforce_or(vec![Resource::Credential(CredentialPermission::ReadSelf), Resource::Credential(CredentialPermission::Read)]).await?;
         let result = CredentialDomain::get_credentials(&session.db, &id).await?;
-        Ok(GetCredentialResponse(Credential::from_model(result)))
+        Ok(Response::Ok(Credential::from_model(result)))
     }
 
     #[instrument]
-    async fn update_credentials(session: AuthSession, id: Path<String>, body: Dto<CredentialUpdate>) -> Result<UpdateCredentialResponse, Error> {
+    async fn update_credentials(session: AuthSession, id: Path<String>, body: Dto<CredentialUpdate>) -> Result<Response<Credential>, Error> {
         session.enforce_or(vec![Resource::Credential(CredentialPermission::UpdateSelf), Resource::Credential(CredentialPermission::Update)]).await?;
         let result = CredentialDomain::update_credentials(&session.db, &session.user.id, &id.into_inner(), body.into_inner()).await?;
-        Ok(UpdateCredentialResponse(Credential::from_model(result)))
+        Ok(Response::Updated(Credential::from_model(result)))
     }
 
     #[instrument]
-    async fn delete_credentials(session: AuthSession, id: Path<String>) -> Result<DeleteCredentialResponse, Error> {
+    async fn delete_credentials(session: AuthSession, id: Path<String>) -> Result<Response<Credential>, Error> {
         session.enforce_or(vec![Resource::Credential(CredentialPermission::DeleteSelf), Resource::Credential(CredentialPermission::Delete)]).await?;
         let result = CredentialDomain::delete_credentials(&session.db, &session.user.id, &id.into_inner()).await?;
-        Ok(DeleteCredentialResponse(Credential::from_model(result)))
+        Ok(Response::Deleted(Credential::from_model(result)))
     }
 }
 

@@ -7,3 +7,5 @@ pub mod pet;
 pub mod provider;
 pub mod settings;
 pub mod user;
+pub mod role;
+pub mod note;

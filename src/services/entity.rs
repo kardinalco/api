@@ -3,7 +3,7 @@ use entity::{role, user};
 use sea_orm::prelude::Expr;
 use sea_orm::sea_query::Alias;
 use sea_orm::JoinType::LeftJoin;
-use sea_orm::{EntityTrait, QueryFilter, QuerySelect, Related, RelationDef, RelationTrait, Select};
+use sea_orm::{EntityTrait, QueryFilter, QuerySelect, Related, RelationDef, RelationTrait, Select, SelectTwoMany};
 use crate::extractors::filter::{build_condition, Filter, IntoColumn};
 use crate::extractors::pagination::Pagination;
 
@@ -106,6 +106,12 @@ pub trait WithPagination {
 }
 
 impl<T: EntityTrait> WithPagination for Select<T> {
+    fn with_pagination(self, pagination: Pagination) -> Self {
+        self.offset(pagination.limit * pagination.page).limit(pagination.limit)
+    }
+}
+
+impl<T: EntityTrait, E: EntityTrait> WithPagination for SelectTwoMany<T, E> {
     fn with_pagination(self, pagination: Pagination) -> Self {
         self.offset(pagination.limit * pagination.page).limit(pagination.limit)
     }

@@ -1,11 +1,12 @@
 use cuid2::cuid;
 use entity::user::Column;
-use sea_orm::{ActiveModelTrait, DatabaseConnection, IntoActiveModel};
+use sea_orm::{ActiveModelTrait, ConnectionTrait, DatabaseConnection, IntoActiveModel};
 use sea_orm::ActiveValue::Set;
 use serde::Deserialize;
 use crate::api::auth::request::AuthRegisterRequest;
 use crate::exceptions::error::Error;
 use crate::api::user::request::UserUpdateRequest;
+use crate::entity::entity::{Create, SoftDelete, Update};
 use crate::extractors::filter::IntoColumn;
 use crate::services::hash::hash;
 
@@ -41,16 +42,12 @@ impl IntoColumn for UserFields {
 type Model = entity::user::Model;
 type Entity = entity::user::Entity;
 
-pub trait CreateUser: Sized {
-    type QueryResult;
-    async fn create(db: &DatabaseConnection, body: AuthRegisterRequest, created_by: Option<String>) -> Self::QueryResult;
-}
-
-impl CreateUser for Entity {
+impl Create for Entity {
     type QueryResult = Result<Model, Error>;
+    type Body = AuthRegisterRequest;
 
     /// Create a new user with a hashed password and return the user model
-    async fn create(db: &DatabaseConnection, body: AuthRegisterRequest, created_by: Option<String>) -> Self::QueryResult {
+    async fn create(db: &impl ConnectionTrait, body: Self::Body, created_by: Option<String>) -> Self::QueryResult {
         let model = entity::user::ActiveModel {
             id: Set(cuid()),
             email: Set(body.email),
@@ -67,16 +64,16 @@ impl CreateUser for Entity {
 
 pub trait UpdateUser: Sized {
     type QueryResult;
-    async fn update(self, db: &DatabaseConnection, body: UserUpdateRequest, updated_by: Option<String>) -> Self::QueryResult;
     async fn update_password(self, db: &DatabaseConnection, password: &str, updated_by: Option<String>) -> Self::QueryResult;
     async fn update_mail(self, db: &DatabaseConnection, mail_id: i32, updated_by: Option<String>) -> Self::QueryResult;
     async fn update_profile_picture(self, db: &DatabaseConnection, profile_picture: &str, updated_by: Option<String>) -> Self::QueryResult;
 }
 
-impl UpdateUser for entity::user::Model {
-    type QueryResult = Result<Self, Error>;
+impl Update for Model {
+    type QueryResult = Result<Model, Error>;
+    type Body = UserUpdateRequest;
 
-    async fn update(self, db: &DatabaseConnection, body: UserUpdateRequest, updated_by: Option<String>) -> Self::QueryResult {
+    async fn update(self, db: &impl ConnectionTrait, body: Self::Body, updated_by: Option<String>) -> Self::QueryResult {
         let mut model = self.into_active_model();
         model.address = body.address.map_or(model.address, |address| sea_orm::Set(Some(address)));
         model.first_name = body.firstname.map_or(model.first_name, |first_name| sea_orm::Set(first_name));
@@ -90,6 +87,10 @@ impl UpdateUser for entity::user::Model {
         model.updated_by = sea_orm::Set(updated_by);
         Ok(model.update(db).await?)
     }
+}
+
+impl UpdateUser for entity::user::Model {
+    type QueryResult = Result<Self, Error>;
 
     async fn update_password(self, db: &DatabaseConnection, password: &str, updated_by: Option<String>) -> Self::QueryResult {
         let mut a = self.into_active_model();
@@ -116,12 +117,10 @@ impl UpdateUser for entity::user::Model {
     }
 }
 
-pub trait DeleteUser {
-    async fn delete_user(self, db: &DatabaseConnection, deleted_by: Option<String>) -> Result<Self, Error> where Self: Sized;
-}
-
-impl DeleteUser for entity::user::Model {
-    async fn delete_user(self, db: &DatabaseConnection, deleted_by: Option<String>) -> Result<Self, Error> where Self: Sized {
+impl SoftDelete for entity::user::Model {
+    type QueryResult = Result<Model, Error>;
+    
+    async fn soft_delete(self, db: &impl ConnectionTrait, deleted_by: Option<String>) -> Result<Self, Error> where Self: Sized {
         let mut a = self.into_active_model();
         a.deleted_by = Set(deleted_by);
         a.deleted_at = Set(Some(chrono::Utc::now().naive_utc()));

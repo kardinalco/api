@@ -1,5 +1,4 @@
 use crate::api::auth::request::{AuthLoginRequest, AuthRegisterRequest, AuthResetPasswordRequest};
-use crate::domain::role::RoleDomain;
 use crate::exceptions::auth::AuthenticateError;
 use crate::exceptions::error::Error;
 use crate::extractors::auth_session::AuthSession;
@@ -19,7 +18,9 @@ use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, In
 use settings::google::Google;
 use tracing::{info, instrument};
 use crate::domain::mail::MailDomain;
-use crate::entity::user::{CreateUser, UpdateUser};
+use crate::domain::role::RoleDomain;
+use crate::entity::entity::Create;
+use crate::entity::user::UpdateUser;
 use crate::services::hash::{compare, hash};
 
 pub struct AuthDomain;

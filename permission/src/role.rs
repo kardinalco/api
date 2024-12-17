@@ -9,4 +9,5 @@ pub enum RolePermission {
     Read,
     Update,
     Delete,
+    Manage,
 }

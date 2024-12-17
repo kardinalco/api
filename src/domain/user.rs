@@ -8,7 +8,8 @@ use sea_query::Expr;
 use tracing::instrument;
 use permission::resource::Resource;
 use permission::user::UserPermission;
-use crate::entity::user::{DeleteUser, UpdateUser, UserFields};
+use crate::entity::entity::{SoftDelete, Update};
+use crate::entity::user::{UpdateUser, UserFields};
 use crate::extractors::auth_session::AuthSession;
 use crate::extractors::filter::{Filter};
 use crate::extractors::pagination::Pagination;
@@ -78,7 +79,7 @@ impl UserDomain {
             false => session.enforce(Resource::User(UserPermission::Delete)).await?
         };
         let user = Self::find_active_user_by_id(&session, user_id).await?;
-        Ok(user.delete_user(&session.db, Some(session.user.id)).await?)
+        Ok(user.soft_delete(&session.db, Some(session.user.id)).await?)
     }
 
     #[instrument(name = "domain::delete_many")]
